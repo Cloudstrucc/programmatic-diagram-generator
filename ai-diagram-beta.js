@@ -1,24 +1,20 @@
 #!/usr/bin/env node
 /**
- * AI-Powered Diagram Generator v6.0
+ * AI-Powered Diagram Generator v5.0
  * 
  * Generates professional architecture diagrams from natural language descriptions.
- * Supports multiple cloud providers, enterprise architecture styles, and predefined templates.
+ * Supports multiple cloud providers, quality levels, and predefined templates.
  * 
- * v6.0 Features:
- *   - Enterprise Architecture: C4 Model, UML/UML2, ArchiMate, TOGAF, Zachman
- *   - Cloud Providers: Azure, AWS, GCP, Alibaba Cloud, IBM Cloud, Oracle OCI, DigitalOcean, OpenStack, Outscale
- *   - Container/DevOps: Kubernetes, Generic/Open-source
- *   - Specialized: Elastic Stack, Firebase
+ * v5.0 Features:
+ *   - Smart description enhancement for better quality output
  *   - Quality presets: simple, standard, enterprise
- *   - 40+ predefined templates
- *   - Smart description enhancement
+ *   - Multiple icon packs: Azure, AWS, GCP, K8s, Generic/Open-source
+ *   - Cross-cloud templates for common patterns
  *   - Automatic multi-line string sanitization
  * 
  * Usage:
- *   node ai-diagram.js generate "Your architecture" --style azure --quality enterprise
- *   node ai-diagram.js generate "class diagram for e-commerce" --style uml
- *   node ai-diagram.js generate --template archimate-layered
+ *   node ai-diagram.js generate "Your architecture" --quality enterprise
+ *   node ai-diagram.js generate --template m365-cmk
  *   node ai-diagram.js templates
  *   node ai-diagram.js styles
  * 
@@ -132,15 +128,15 @@ Create an ENTERPRISE-GRADE diagram:
 };
 
 // =============================================================================
-// DIAGRAM STYLES - All supported icon packs
+// DIAGRAM STYLES - Different cloud providers and icon packs
 // =============================================================================
 
 const DIAGRAM_STYLES = {
-  // ===== CLOUD PROVIDERS =====
-  
+  /**
+   * Azure Architecture - Microsoft Azure icons
+   */
   azure: {
     name: 'Azure Architecture',
-    category: 'Cloud Providers',
     imports: `
 from diagrams import Diagram, Cluster, Edge
 from diagrams.azure.compute import FunctionApps, AppServices, VM, AKS, ContainerInstances
@@ -159,7 +155,8 @@ from diagrams.onprem.client import Users
 from diagrams.saas.chat import Teams
 from diagrams.generic.storage import Storage
 from diagrams.generic.compute import Rack
-from diagrams.generic.database import SQL`,
+from diagrams.generic.database import SQL
+`,
     examples: `
 # M365 CMK Key Hierarchy Pattern:
 with Cluster("Azure Key Vault (HSM-Protected)", graph_attr={"bgcolor": "#ffebee"}):
@@ -169,23 +166,28 @@ with Cluster("Azure Key Vault (HSM-Protected)", graph_attr={"bgcolor": "#ffebee"
         dep_spo = KeyVaults("DEP Key\\nSharePoint")
         dep_teams = KeyVaults("DEP Key\\nTeams")
     root_key >> Edge(label="Wraps", color="red", style="bold") >> dep_spo
+    root_key >> Edge(label="Wraps", color="red", style="bold") >> dep_teams
 
 # Identity Pattern:
 with Cluster("Identity & Access Control", graph_attr={"bgcolor": "#f3e5f5"}):
     entra = ActiveDirectory("Entra ID")
     mi = ManagedIdentities("Service\\nPrincipal")
     entra >> mi
+mi >> Edge(label="RBAC", color="purple", style="dashed") >> root_key
 
 # Monitoring Pattern:
 with Cluster("Monitoring", graph_attr={"bgcolor": "#fff3e0"}):
     law = LogAnalyticsWorkspaces("Log Analytics")
     alert = Rack("Alerts")
-    law >> alert`,
+    law >> alert
+`,
   },
 
+  /**
+   * AWS Architecture - Amazon Web Services icons
+   */
   aws: {
     name: 'AWS Architecture',
-    category: 'Cloud Providers',
     imports: `
 from diagrams import Diagram, Cluster, Edge
 from diagrams.aws.compute import Lambda, EC2, ECS, EKS, Fargate, ElasticBeanstalk, Batch
@@ -201,23 +203,49 @@ from diagrams.aws.ml import Sagemaker, Rekognition, Comprehend
 from diagrams.aws.general import Users
 from diagrams.onprem.client import Users as OnPremUsers
 from diagrams.generic.storage import Storage
-from diagrams.generic.compute import Rack`,
+from diagrams.generic.compute import Rack
+`,
     examples: `
 # AWS Security Pattern with KMS:
 with Cluster("AWS Security", graph_attr={"bgcolor": "#ffebee"}):
     kms = KMS("KMS\\nCMK")
     secrets = SecretsManager("Secrets\\nManager")
+    
+with Cluster("IAM", graph_attr={"bgcolor": "#e3f2fd"}):
+    iam = IAM("IAM Role")
+    cognito = Cognito("Cognito")
+
+iam >> Edge(label="kms:Decrypt", color="purple", style="dashed") >> kms
 
 # AWS Serverless Pattern:
 with Cluster("API Layer", graph_attr={"bgcolor": "#e8f5e9"}):
     api = APIGateway("API Gateway")
     waf = WAF("WAF")
-    waf >> api`,
+    waf >> api
+
+with Cluster("Compute", graph_attr={"bgcolor": "#fff3e0"}):
+    fn = Lambda("Lambda")
+    
+with Cluster("Data", graph_attr={"bgcolor": "#e3f2fd"}):
+    db = Dynamodb("DynamoDB")
+    cache = ElastiCache("ElastiCache")
+
+api >> fn >> db
+fn >> cache
+
+# AWS Monitoring:
+with Cluster("Observability", graph_attr={"bgcolor": "#f3e5f5"}):
+    cw = Cloudwatch("CloudWatch")
+    ct = Cloudtrail("CloudTrail")
+    sh = SecurityHub("Security Hub")
+`,
   },
 
+  /**
+   * GCP Architecture - Google Cloud Platform icons
+   */
   gcp: {
     name: 'GCP Architecture',
-    category: 'Cloud Providers',
     imports: `
 from diagrams import Diagram, Cluster, Edge
 from diagrams.gcp.compute import Functions, Run, GKE, ComputeEngine, AppEngine, GCF
@@ -231,121 +259,35 @@ from diagrams.gcp.ml import AIHub, AutoML, VisionAPI
 from diagrams.gcp.operations import Monitoring, Logging
 from diagrams.onprem.client import Users
 from diagrams.generic.storage import Storage
-from diagrams.generic.compute import Rack`,
+from diagrams.generic.compute import Rack
+`,
     examples: `
 # GCP Security Pattern:
 with Cluster("Security", graph_attr={"bgcolor": "#ffebee"}):
     kms = KeyManagementService("Cloud KMS")
-    scc = SecurityCommandCenter("Security\\nCommand Center")`,
+    scc = SecurityCommandCenter("Security\\nCommand Center")
+
+with Cluster("Identity", graph_attr={"bgcolor": "#e3f2fd"}):
+    iam = Iam("IAM")
+
+iam >> Edge(label="roles/cloudkms.cryptoKeyEncrypterDecrypter", color="purple") >> kms
+
+# GCP Data Platform:
+with Cluster("Data Lake", graph_attr={"bgcolor": "#e8f5e9"}):
+    gcs = GCS("Cloud Storage")
+    bq = BigQuery("BigQuery")
+    dataflow = Dataflow("Dataflow")
+
+gcs >> dataflow >> bq
+`,
   },
 
-  alibabacloud: {
-    name: 'Alibaba Cloud',
-    category: 'Cloud Providers',
-    imports: `
-from diagrams import Diagram, Cluster, Edge
-from diagrams.alibabacloud.compute import ECS, ContainerService, FunctionCompute, ElasticSearch, AutoScaling
-from diagrams.alibabacloud.database import RDS, PolarDB, Redis as AliRedis, MongoDB as AliMongoDB, AnalyticDB
-from diagrams.alibabacloud.network import SLB, ALB, VPC as AliVPC, CDN as AliCDN, DNS as AliDNS, NAT as AliNAT, VPN as AliVPN
-from diagrams.alibabacloud.storage import OSS, NAS as AliNAS, ESSD
-from diagrams.alibabacloud.security import WAF as AliWAF, AntiDdos, SecurityCenter as AliSecurityCenter, DataEncryptionService
-from diagrams.alibabacloud.analytics import DataV, Datahub, ELK
-from diagrams.alibabacloud.application import APIGateway as AliAPIGateway, LogService, MessageNotificationService
-from diagrams.onprem.client import Users
-from diagrams.generic.storage import Storage
-from diagrams.generic.compute import Rack`,
-    examples: `# Alibaba e-commerce with Anti-DDoS, WAF, CDN, ECS, RDS`,
-  },
-
-  ibm: {
-    name: 'IBM Cloud',
-    category: 'Cloud Providers',
-    imports: `
-from diagrams import Diagram, Cluster, Edge
-from diagrams.ibm.compute import BareMetalServer, VirtualMachineClassic, MQ, PowerSystems
-from diagrams.ibm.network import VPC as IbmVPC, LoadBalancerClassic, DirectLink, TransitGateway, VPN as IbmVPN
-from diagrams.ibm.storage import BlockStorage, ObjectStorage, FileStorage as IbmFileStorage
-from diagrams.ibm.database import CloudDatabases, Cloudant, Db2, Informix
-from diagrams.ibm.applications import OpenShift, CloudFoundry
-from diagrams.ibm.devops import Toolchain, AutoScaling as IbmAutoScaling
-from diagrams.ibm.security import IdentityProvider, KeyProtect, ApiConnect
-from diagrams.ibm.analytics import Watson, StreamingAnalytics
-from diagrams.ibm.management import CloudManagement, Monitoring as IbmMonitoring, AlertNotification
-from diagrams.ibm.infrastructure import ContainerKubernetes, ContainerRegistry as IbmContainerRegistry
-from diagrams.ibm.general import Cloudservices
-from diagrams.onprem.client import Users
-from diagrams.generic.compute import Rack`,
-    examples: `# IBM Hybrid with Direct Link, OpenShift, Key Protect`,
-  },
-
-  oci: {
-    name: 'Oracle Cloud (OCI)',
-    category: 'Cloud Providers',
-    imports: `
-from diagrams import Diagram, Cluster, Edge
-from diagrams.oci.compute import Compute, Container, Functions as OciFunctions, VM as OciVM, VMCluster
-from diagrams.oci.database import Autonomous, DatabaseService, Dcat
-from diagrams.oci.network import VCN, LoadBalancer as OciLB, DRG, Firewall as OciFirewall, ServiceGateway, InternetGateway as OciIGW
-from diagrams.oci.storage import BlockStorage as OciBlock, FileStorage as OciFS, ObjectStorage as OciObject
-from diagrams.oci.security import Vault, CloudGuard, IDCloud, KeyManagement, WAF as OciWAF, Bastion
-from diagrams.oci.governance import Compartments, Policies, Tagging, Audit
-from diagrams.oci.monitoring import Alarm, Events, Logging as OciLogging, Notifications, Telemetry
-from diagrams.oci.connectivity import Backbone, CDN as OciCDN, FastConnect, VPN as OciVPN, DNS as OciDNS
-from diagrams.onprem.client import Users
-from diagrams.generic.compute import Rack`,
-    examples: `# OCI Landing Zone with Compartments, VCN, Cloud Guard, Vault`,
-  },
-
-  digitalocean: {
-    name: 'DigitalOcean',
-    category: 'Cloud Providers',
-    imports: `
-from diagrams import Diagram, Cluster, Edge
-from diagrams.digitalocean.compute import Containers, Docker as DoDocker, Droplet, K8SCluster, K8SNodePool
-from diagrams.digitalocean.database import DbaasPrimary, DbaasReadReplica, DbaasStandby
-from diagrams.digitalocean.network import Certificate, Firewall as DoFirewall, FloatingIp, LoadBalancer as DoLB, DomainRegistration
-from diagrams.digitalocean.storage import Folder, Space, Volume
-from diagrams.onprem.client import Users
-from diagrams.generic.compute import Rack`,
-    examples: `# DigitalOcean with DOKS, Managed DB, Spaces`,
-  },
-
-  openstack: {
-    name: 'OpenStack',
-    category: 'Cloud Providers',
-    imports: `
-from diagrams import Diagram, Cluster, Edge
-from diagrams.openstack.compute import Nova, Qemu
-from diagrams.openstack.networking import Neutron, Designate, Octavia
-from diagrams.openstack.storage import Cinder, Manila, Swift
-from diagrams.openstack.sharedservices import Glance, Keystone, Barbican, Heat
-from diagrams.openstack.deployment import Ansible as OsAnsible, Kolla, TripleO
-from diagrams.openstack.monitoring import Monasca, Telemetry
-from diagrams.openstack.frontend import Horizon
-from diagrams.onprem.client import Users
-from diagrams.generic.compute import Rack`,
-    examples: `# OpenStack with Keystone, Nova, Neutron, Cinder, Barbican`,
-  },
-
-  outscale: {
-    name: 'Outscale (3DS)',
-    category: 'Cloud Providers',
-    imports: `
-from diagrams import Diagram, Cluster, Edge
-from diagrams.outscale.compute import Compute as OsCompute, DirectConnect as OsDc
-from diagrams.outscale.network import LoadBalancer as OsLB, Net, SiteToSiteVpng, InternetService, NatService
-from diagrams.outscale.storage import Storage as OsStorage, SimpleStorageService
-from diagrams.outscale.security import IdentityAndAccessManagement, Firewall as OsFirewall
-from diagrams.onprem.client import Users
-from diagrams.generic.compute import Rack`,
-    examples: `# Outscale European sovereign cloud pattern`,
-  },
-
-  // ===== CONTAINER & DEVOPS =====
-
+  /**
+   * Kubernetes Architecture
+   * VERIFIED icons - checked against diagrams library v0.25.1
+   */
   k8s: {
     name: 'Kubernetes Architecture',
-    category: 'Container & DevOps',
     imports: `
 from diagrams import Diagram, Cluster, Edge
 from diagrams.k8s.compute import Pod, Deployment, ReplicaSet, StatefulSet, DaemonSet, Job, Cronjob
@@ -364,22 +306,41 @@ from diagrams.onprem.monitoring import Prometheus, Grafana
 from diagrams.onprem.logging import Loki, FluentBit
 from diagrams.onprem.tracing import Jaeger
 from diagrams.generic.storage import Storage
-from diagrams.generic.compute import Rack`,
+from diagrams.generic.compute import Rack
+`,
     examples: `
 # K8s Ingress Pattern:
 with Cluster("Kubernetes Cluster"):
     ing = Ingress("Ingress")
+    
     with Cluster("Namespace: production"):
         svc = Service("Service")
         with Cluster("Deployment"):
             pods = [Pod("pod-1"), Pod("pod-2"), Pod("pod-3")]
         hpa = HPA("HPA")
-ing >> svc >> pods`,
+        
+    with Cluster("Config"):
+        cm = ConfigMap("ConfigMap")
+        secret = Secret("Secret")
+
+ing >> svc >> pods
+hpa >> pods[0]
+
+# K8s RBAC:
+with Cluster("RBAC", graph_attr={"bgcolor": "#f3e5f5"}):
+    sa = ServiceAccount("ServiceAccount")
+    role = Role("Role")
+    rb = RoleBinding("RoleBinding")
+    sa >> rb >> role
+`,
   },
 
+  /**
+   * Generic/Open-Source Architecture - Cloud-agnostic icons
+   * VERIFIED icons only - checked against diagrams library v0.25.1
+   */
   generic: {
     name: 'Generic / Open Source',
-    category: 'Container & DevOps',
     imports: `
 from diagrams import Diagram, Cluster, Edge
 from diagrams.generic.compute import Rack
@@ -392,151 +353,72 @@ from diagrams.generic.device import Mobile, Tablet
 from diagrams.generic.blank import Blank
 from diagrams.onprem.client import Users, Client
 from diagrams.onprem.compute import Server, Nomad
-from diagrams.onprem.database import PostgreSQL, MySQL, MongoDB, Redis, Cassandra, InfluxDB, Neo4J, MariaDB, Clickhouse, CockroachDB
+from diagrams.onprem.database import PostgreSQL, MySQL, MongoDB, Redis, Cassandra, InfluxDB, Neo4J
 from diagrams.onprem.network import Nginx, Apache, Traefik, HAProxy, Envoy, Istio, Consul, Kong, Linkerd, Zookeeper, Caddy, Gunicorn, Tomcat
 from diagrams.onprem.queue import Kafka, RabbitMQ, ActiveMQ, Celery
-from diagrams.onprem.monitoring import Prometheus, Grafana, Datadog, Splunk, Nagios, Zabbix, Thanos, Sentry, Newrelic
-from diagrams.onprem.ci import Jenkins, GithubActions, GitlabCI, CircleCI, DroneCI, TravisCI, Teamcity, Concourse
-from diagrams.onprem.container import Docker, Containerd
-from diagrams.onprem.vcs import Git, Github, Gitlab, Bitbucket
+from diagrams.onprem.monitoring import Prometheus, Grafana, Datadog, Splunk, Nagios, Zabbix, Thanos, Cortex, Mimir, Sentry
+from diagrams.onprem.ci import Jenkins, GithubActions, GitlabCI, CircleCI, DroneCI, TravisCI, Teamcity
+from diagrams.onprem.container import Docker
+from diagrams.onprem.vcs import Git, Github, Gitlab
 from diagrams.onprem.security import Vault, Trivy, Bitwarden
-from diagrams.onprem.inmemory import Redis as RedisCache, Memcached, Hazelcast
+from diagrams.onprem.inmemory import Redis as RedisCache, Memcached
 from diagrams.onprem.logging import FluentBit, Loki, Graylog, RSyslog
 from diagrams.onprem.tracing import Jaeger, Tempo
-from diagrams.onprem.gitops import ArgoCD, Flux
-from diagrams.onprem.workflow import Airflow, Kubeflow, Nifi
-from diagrams.onprem.iac import Ansible, Terraform, Puppet, Atlantis
-from diagrams.onprem.certificates import Letsencrypt, CertManager
-from diagrams.saas.chat import Teams, Slack, Discord
-from diagrams.saas.cdn import Cloudflare, Akamai, Fastly
+from diagrams.saas.chat import Teams, Slack
+from diagrams.saas.cdn import Cloudflare
 from diagrams.saas.identity import Auth0, Okta
 from diagrams.saas.alerting import Pagerduty, Opsgenie
-from diagrams.programming.language import Python, Javascript, Go, Rust, Java, Nodejs, Csharp, Typescript
-from diagrams.programming.framework import React, Vue, Angular, Django, Flask, Spring, Fastapi`,
+from diagrams.programming.language import Python, Javascript, Go, Rust, Java, Nodejs
+from diagrams.programming.framework import React, Vue, Angular, Django, Flask, Spring
+`,
     examples: `
-# Open Source Observability Stack:
+# Open Source Security with Vault:
+with Cluster("Secrets Management", graph_attr={"bgcolor": "#ffebee"}):
+    vault = Vault("HashiCorp\\nVault")
+    
+with Cluster("Identity", graph_attr={"bgcolor": "#e3f2fd"}):
+    okta = Okta("Okta\\nSSO")
+    
+okta >> Edge(label="OIDC", color="purple") >> vault
+
+# Open Source Observability Stack (VERIFIED ICONS):
 with Cluster("Observability", graph_attr={"bgcolor": "#e8f5e9"}):
     prom = Prometheus("Prometheus")
     grafana = Grafana("Grafana")
     loki = Loki("Loki")
     jaeger = Jaeger("Jaeger")
-    fluentbit = FluentBit("FluentBit")  # Note: Fluentd is NOT available
+    fluentbit = FluentBit("FluentBit")  # Note: Fluentd is NOT available, use FluentBit
+    
     prom >> grafana
-    loki >> grafana`,
-  },
+    loki >> grafana
+    jaeger >> grafana
 
-  // ===== ENTERPRISE ARCHITECTURE =====
+# Service Mesh with Istio:
+with Cluster("Service Mesh", graph_attr={"bgcolor": "#e8eaf6"}):
+    istio = Istio("Istio")
+    envoy1 = Envoy("Envoy Sidecar")
+    envoy2 = Envoy("Envoy Sidecar")
+    
+istio >> Edge(label="Config", color="purple", style="dashed") >> envoy1
+istio >> Edge(label="Config", color="purple", style="dashed") >> envoy2
 
-  c4: {
-    name: 'C4 Model',
-    category: 'Enterprise Architecture',
-    imports: `
-from diagrams import Diagram, Cluster, Edge
-from diagrams.c4 import Person, Container, Database, System, SystemBoundary, Relationship
-from diagrams.generic.compute import Rack
-from diagrams.generic.database import SQL
-from diagrams.generic.storage import Storage
-from diagrams.onprem.client import Users`,
-    examples: `
-# C4 Context Diagram:
-user = Person("User", "A user of the system")
-system = System("E-Commerce System", "Allows users to browse and purchase")
-payment = System("Payment Gateway", "External payment processing", external=True)
-user >> Edge(label="Uses") >> system`,
-  },
+# CI/CD Pipeline:
+with Cluster("CI/CD", graph_attr={"bgcolor": "#fff3e0"}):
+    gh = Github("GitHub")
+    actions = GithubActions("Actions")
+    docker = Docker("Registry")
+    
+gh >> actions >> docker
 
-  uml: {
-    name: 'UML / UML2',
-    category: 'Enterprise Architecture',
-    imports: `
-from diagrams import Diagram, Cluster, Edge
-from diagrams.generic.compute import Rack
-from diagrams.generic.database import SQL
-from diagrams.generic.storage import Storage
-from diagrams.generic.network import Switch, Router
-from diagrams.generic.blank import Blank
-from diagrams.onprem.client import Users, Client
-from diagrams.onprem.compute import Server
-from diagrams.programming.language import Python, Java, Csharp
-from diagrams.programming.framework import Spring, Django, React`,
-    examples: `
-# UML Class Diagram Pattern:
-with Cluster("com.example.domain", graph_attr={"bgcolor": "#e3f2fd"}):
-    customer = Rack("Customer\\n---------\\n- id: Long\\n- name: String")
-    order = Rack("Order\\n---------\\n- id: Long\\n- status: Status")
-customer >> Edge(label="1      *", style="bold") >> order`,
-  },
-
-  archimate: {
-    name: 'ArchiMate',
-    category: 'Enterprise Architecture',
-    imports: `
-from diagrams import Diagram, Cluster, Edge
-from diagrams.generic.compute import Rack
-from diagrams.generic.database import SQL
-from diagrams.generic.storage import Storage
-from diagrams.generic.network import Switch, Router, Firewall, Subnet
-from diagrams.generic.blank import Blank
-from diagrams.generic.place import Datacenter
-from diagrams.generic.device import Mobile, Tablet
-from diagrams.onprem.client import Users, Client
-from diagrams.onprem.compute import Server
-from diagrams.onprem.network import Nginx
-from diagrams.onprem.database import PostgreSQL
-from diagrams.onprem.queue import Kafka`,
-    examples: `
-# ArchiMate Layer Colors:
-# Strategy: #fff8e1, Business: #fffde7, Application: #e3f2fd, Technology: #e8f5e9, Motivation: #fce4ec`,
-  },
-
-  enterprise: {
-    name: 'Enterprise (TOGAF)',
-    category: 'Enterprise Architecture',
-    imports: `
-from diagrams import Diagram, Cluster, Edge
-from diagrams.generic.compute import Rack
-from diagrams.generic.database import SQL
-from diagrams.generic.storage import Storage
-from diagrams.generic.network import Switch, Router, Firewall
-from diagrams.generic.place import Datacenter
-from diagrams.onprem.client import Users, Client
-from diagrams.onprem.compute import Server
-from diagrams.onprem.database import PostgreSQL
-from diagrams.onprem.queue import Kafka
-from diagrams.saas.identity import Okta`,
-    examples: `# TOGAF layers: Business=#e3f2fd, Application=#e8f5e9, Data=#fff3e0, Technology=#f3e5f5`,
-  },
-
-  // ===== SAAS & SPECIALIZED =====
-
-  elastic: {
-    name: 'Elastic Stack',
-    category: 'SaaS & Specialized',
-    imports: `
-from diagrams import Diagram, Cluster, Edge
-from diagrams.elastic.elasticsearch import Elasticsearch, Kibana, Logstash, Beats, Alerting, MachineLearning, Maps, Monitoring
-from diagrams.elastic.observability import APM, Logs, Metrics, Observability, Uptime
-from diagrams.elastic.agent import Agent, Fleet, Integrations
-from diagrams.elastic.beats import APM as APMBeat, Auditbeat, Filebeat, Functionbeat, Heartbeat, Metricbeat, Packetbeat, Winlogbeat
-from diagrams.elastic.saas import Elastic, Cloud
-from diagrams.elastic.security import Endpoint, SIEM, Security
-from diagrams.generic.compute import Rack
-from diagrams.onprem.client import Users`,
-    examples: `# Elastic with Filebeat, Metricbeat, Logstash, Elasticsearch, Kibana, SIEM`,
-  },
-
-  firebase: {
-    name: 'Firebase',
-    category: 'SaaS & Specialized',
-    imports: `
-from diagrams import Diagram, Cluster, Edge
-from diagrams.firebase.develop import Authentication, Firestore, Functions, Hosting, RealtimeDatabase, Storage as FirebaseStorage
-from diagrams.firebase.grow import ABTesting, DynamicLinks, Messaging, RemoteConfig
-from diagrams.firebase.quality import AppDistribution, Crashlytics, PerformanceMonitoring, TestLab
-from diagrams.firebase.base import Firebase
-from diagrams.onprem.client import Users
-from diagrams.generic.device import Mobile, Tablet`,
-    examples: `# Firebase with Authentication, Firestore, Functions, Crashlytics, FCM`,
+# Message Queue Pattern:
+with Cluster("Event Streaming", graph_attr={"bgcolor": "#f3e5f5"}):
+    kafka = Kafka("Kafka")
+    
+with Cluster("Workers"):
+    workers = [Server("worker-1"), Server("worker-2")]
+    
+kafka >> workers
+`,
   },
 };
 
@@ -552,12 +434,18 @@ const TEMPLATES = {
     style: 'azure',
     quality: 'enterprise',
     prompt: `M365 Customer Managed Keys (CMK) encryption architecture showing:
-- Azure Key Vault (HSM-Protected) containing Customer Root Key (RSA 2048+) and Data Encryption Policy (DEP) Keys for SharePoint, Exchange, Teams
-- Root key wrapping all DEP keys
+- Azure Key Vault (HSM-Protected) containing:
+  - Customer Root Key (RSA 2048+) 
+  - Data Encryption Policy (DEP) Keys for SharePoint, Exchange, and Teams
+  - Root key wrapping all DEP keys
 - DR Key Vault in secondary region with geo-replication
-- Microsoft 365 Workloads with Availability Keys (AEK)
+- Microsoft 365 Workloads:
+  - SharePoint Online with Availability Key (AEK) and SPO Content
+  - Exchange Online with Availability Key (AEK) and Mailboxes
+  - Teams with Availability Key (AEK) and Teams Data (Chats, Files)
 - Encryption flow: DEP Keys encrypt Service Keys (AEKs), AEKs encrypt Content
 - Identity & Access Control: Entra ID -> M365 Service Principal -> Key Vault Crypto User RBAC
+- Key Management Automation: DevOps Pipeline deploying DEP Config, Logic App for Key Rotation
 - Monitoring & Compliance: Log Analytics receiving audit logs, Key Access Alerts
 Use direction LR for left-to-right encryption flow.`,
   },
@@ -567,7 +455,23 @@ Use direction LR for left-to-right encryption flow.`,
     description: 'Power Platform with Customer Managed Keys - Dataverse, Power Apps, Power Automate',
     style: 'azure',
     quality: 'enterprise',
-    prompt: `Power Platform Customer Managed Keys architecture showing Entra ID, Managed Identity with RBAC, Key Vault (HSM-backed), Power Apps, Power Automate, Dataverse, encrypted Blob Storage. Use direction TB.`,
+    prompt: `Power Platform Customer Managed Keys architecture showing:
+- Azure Control Plane:
+  - Entra ID (Identity Provider)
+  - Managed Identity (Service Identity) with RBAC permissions
+  - Key Vault (CMK Storage) with HSM-backed keys
+- Power Platform:
+  - Power Apps (Low-Code Apps)
+  - Power Automate (Workflows)
+  - Dataverse (Data Platform)
+- Encrypted Storage:
+  - Blob Storage (Encrypted Data)
+- Authentication flow: Entra ID -> Managed Identity
+- Encryption flow: Managed Identity gets encryption keys from Key Vault
+- Dataverse requests CMK from Key Vault
+- All Power Platform data encrypted using CMK (AES-256)
+- Include key rotation policies and audit logging
+Use direction TB for top-to-bottom hierarchy.`,
   },
 
   'azure-landing-zone': {
@@ -575,7 +479,23 @@ Use direction LR for left-to-right encryption flow.`,
     description: 'Enterprise-scale Azure landing zone with management groups, subscriptions, networking',
     style: 'azure',
     quality: 'enterprise',
-    prompt: `Azure Enterprise Landing Zone with Management Group Hierarchy (Root, Platform, Landing Zones, Sandbox), Platform Subscriptions (Identity, Management, Connectivity), Spoke VNets, Azure Policy, Defender, Sentinel. Use direction TB.`,
+    prompt: `Azure Enterprise Landing Zone architecture showing:
+- Management Group Hierarchy:
+  - Root Management Group
+  - Platform (Identity, Management, Connectivity)
+  - Landing Zones (Corp, Online)
+  - Sandbox/Decommissioned
+- Platform Subscriptions:
+  - Identity: Entra ID Connect, Domain Controllers
+  - Management: Log Analytics, Automation, Security Center
+  - Connectivity: Hub VNet, Azure Firewall, ExpressRoute/VPN
+- Landing Zone Subscriptions:
+  - Spoke VNets with peering to Hub
+  - Application workloads
+- Azure Policy for governance (ITSG-33 or similar)
+- Microsoft Defender for Cloud
+- Azure Monitor and Sentinel for security
+Use direction TB for hierarchy view.`,
   },
 
   'zero-trust': {
@@ -583,7 +503,34 @@ Use direction LR for left-to-right encryption flow.`,
     description: 'Enterprise Zero Trust with identity, device, network, and data protection',
     style: 'azure',
     quality: 'enterprise',
-    prompt: `Zero Trust Security Architecture with Identity Pillar (Entra ID, Conditional Access, PIM, MFA), Device Pillar (Intune, Compliance), Network Pillar (Firewall, Private Endpoints), Application Pillar (App Service, APIM), Data Pillar (Key Vault CMK, Purview), Security Operations (Sentinel, Defender XDR).`,
+    prompt: `Enterprise Zero Trust Security Architecture showing:
+- Identity Pillar:
+  - Entra ID (Identity Provider)
+  - Conditional Access Policies
+  - Privileged Identity Management (PIM)
+  - Multi-Factor Authentication
+- Device Pillar:
+  - Intune MDM/MAM
+  - Device Compliance
+  - Defender for Endpoint
+- Network Pillar:
+  - Azure Firewall
+  - Private Endpoints
+  - VNet Segmentation
+  - Web Application Firewall
+- Application Pillar:
+  - App Service with Managed Identity
+  - API Management
+  - App Proxy
+- Data Pillar:
+  - Key Vault (CMK)
+  - Microsoft Purview (DLP, Sensitivity Labels)
+  - Encryption at rest and in transit
+- Security Operations:
+  - Microsoft Sentinel (SIEM)
+  - Defender XDR
+  - Log Analytics
+Show verification/trust boundaries at each layer.`,
   },
 
   // ===== AWS TEMPLATES =====
@@ -592,7 +539,32 @@ Use direction LR for left-to-right encryption flow.`,
     description: 'Serverless architecture with API Gateway, Lambda, DynamoDB, and security',
     style: 'aws',
     quality: 'enterprise',
-    prompt: `AWS Serverless with CloudFront CDN, WAF, API Gateway, Lambda Functions, Step Functions, DynamoDB, ElastiCache, S3, IAM Roles, KMS, Secrets Manager, Cognito, EventBridge, SQS, SNS, CloudWatch, X-Ray, CloudTrail. Direction LR.`,
+    prompt: `AWS Serverless Architecture showing:
+- API Layer:
+  - CloudFront CDN
+  - WAF (Web Application Firewall)
+  - API Gateway (REST/HTTP API)
+- Compute Layer:
+  - Lambda Functions (multiple services)
+  - Step Functions for orchestration
+- Data Layer:
+  - DynamoDB (primary data)
+  - ElastiCache (Redis for caching)
+  - S3 (object storage)
+- Security:
+  - IAM Roles with least privilege
+  - KMS for encryption
+  - Secrets Manager
+  - Cognito for authentication
+- Event-Driven:
+  - EventBridge
+  - SQS queues
+  - SNS topics
+- Monitoring:
+  - CloudWatch Logs and Metrics
+  - X-Ray tracing
+  - CloudTrail audit
+Use direction LR for request flow.`,
   },
 
   'aws-eks': {
@@ -600,7 +572,32 @@ Use direction LR for left-to-right encryption flow.`,
     description: 'Production EKS cluster with networking, security, and observability',
     style: 'aws',
     quality: 'enterprise',
-    prompt: `AWS EKS with VPC (public/private subnets), NAT Gateway, ALB, EKS Control Plane, Managed Node Groups, IRSA, KMS secrets, Security Groups, EBS/EFS CSI, CloudWatch Container Insights, Prometheus/Grafana, CodePipeline, ECR. Direction TB.`,
+    prompt: `AWS EKS Production Platform showing:
+- Networking:
+  - VPC with public and private subnets
+  - NAT Gateway
+  - Application Load Balancer
+  - AWS PrivateLink
+- EKS Cluster:
+  - Control Plane (managed)
+  - Node Groups (managed/self-managed)
+  - Fargate profiles (optional)
+- Security:
+  - IAM Roles for Service Accounts (IRSA)
+  - KMS for secrets encryption
+  - Security Groups
+  - Network Policies
+- Storage:
+  - EBS CSI Driver
+  - EFS CSI Driver
+- Observability:
+  - CloudWatch Container Insights
+  - Prometheus/Grafana
+  - AWS X-Ray
+- CI/CD:
+  - CodePipeline
+  - ECR (Container Registry)
+Use direction TB.`,
   },
 
   // ===== GCP TEMPLATES =====
@@ -609,7 +606,32 @@ Use direction LR for left-to-right encryption flow.`,
     description: 'Modern data platform with BigQuery, Dataflow, and analytics',
     style: 'gcp',
     quality: 'enterprise',
-    prompt: `GCP Data Platform with Pub/Sub streaming, Cloud Storage batch, Dataflow ETL, Data Lake zones, BigQuery, BigQuery ML, Dataproc Spark, Composer Airflow, Cloud KMS, IAM, VPC Service Controls, DLP, Looker. Direction LR.`,
+    prompt: `GCP Data Platform Architecture showing:
+- Data Ingestion:
+  - Pub/Sub for streaming
+  - Cloud Storage for batch
+  - Dataflow for ETL/ELT
+- Data Lake:
+  - Cloud Storage (raw, processed, curated zones)
+  - Data Catalog for metadata
+- Data Warehouse:
+  - BigQuery (analytics)
+  - BigQuery ML
+- Data Processing:
+  - Dataflow (Apache Beam)
+  - Dataproc (Spark)
+  - Cloud Composer (Airflow)
+- Security:
+  - Cloud KMS for encryption
+  - IAM with fine-grained access
+  - VPC Service Controls
+  - Data Loss Prevention API
+- Visualization:
+  - Looker / Looker Studio
+- Monitoring:
+  - Cloud Monitoring
+  - Cloud Logging
+Use direction LR for data flow.`,
   },
 
   // ===== KUBERNETES TEMPLATES =====
@@ -618,239 +640,129 @@ Use direction LR for left-to-right encryption flow.`,
     description: 'Production microservices platform with service mesh and observability',
     style: 'k8s',
     quality: 'enterprise',
-    prompt: `K8s Microservices with Ingress Controller, TLS, Istio Service Mesh with mTLS, Deployments with HPA, Services, ConfigMaps, Secrets, StatefulSets, PVs, Redis, RBAC, Network Policies, Prometheus, Grafana, Jaeger, Loki, ArgoCD GitOps. Direction TB.`,
+    prompt: `Kubernetes Microservices Platform showing:
+- Ingress Layer:
+  - Ingress Controller (Nginx/Traefik)
+  - TLS termination
+  - Rate limiting
+- Service Mesh:
+  - Istio/Linkerd sidecar proxies
+  - mTLS between services
+  - Traffic management
+- Microservices:
+  - Multiple Deployments with HPA
+  - Services for each microservice
+  - ConfigMaps and Secrets
+- Data Layer:
+  - StatefulSets for databases
+  - PersistentVolumes
+  - Redis for caching
+- Security:
+  - RBAC (Roles, RoleBindings)
+  - Network Policies
+  - Pod Security Standards
+  - Service Accounts
+- Observability:
+  - Prometheus + Grafana
+  - Jaeger/Tempo for tracing
+  - Loki for logs
+- GitOps:
+  - ArgoCD or Flux
+Use direction TB for cluster hierarchy.`,
   },
 
-  // ===== OSS TEMPLATES =====
+  // ===== GENERIC/OPEN SOURCE TEMPLATES =====
   'oss-observability': {
     name: 'Open Source Observability',
     description: 'Full observability stack with Prometheus, Grafana, Loki, Tempo',
     style: 'generic',
     quality: 'enterprise',
-    prompt: `OSS Observability with Prometheus, Alertmanager for metrics, Loki, FluentBit for logs, Tempo/Jaeger, OpenTelemetry for traces, Grafana dashboards, Object Storage backend, PagerDuty/Slack integration. Direction TB.`,
+    prompt: `Open Source Observability Stack showing:
+- Metrics:
+  - Prometheus (metrics collection)
+  - Alertmanager (alerting)
+  - Node Exporter, cAdvisor
+- Logs:
+  - Loki (log aggregation)
+  - Promtail (log shipping)
+  - FluentBit alternative
+- Traces:
+  - Tempo or Jaeger
+  - OpenTelemetry Collector
+- Visualization:
+  - Grafana (unified dashboards)
+  - Grafana Alerting
+- Storage:
+  - Object Storage (S3/GCS/Minio)
+  - Time-series optimized
+- Integration:
+  - PagerDuty/OpsGenie for alerts
+  - Slack notifications
+Show data flow from applications to storage to visualization.`,
   },
 
   'oss-cicd': {
     name: 'Open Source CI/CD',
-    description: 'GitOps CI/CD pipeline with GitHub Actions, ArgoCD',
+    description: 'GitOps CI/CD pipeline with GitHub Actions, ArgoCD, and container registry',
     style: 'generic',
     quality: 'enterprise',
-    prompt: `OSS CI/CD with GitHub/GitLab, branch protection, PRs, GitHub Actions/Jenkins CI (build, test, Trivy scan), Docker/Harbor registry, ArgoCD/Flux GitOps, Helm/Kustomize, K8s targets, Slack notifications. Direction LR.`,
+    prompt: `Open Source CI/CD Pipeline showing:
+- Source Control:
+  - GitHub/GitLab repository
+  - Branch protection
+  - Pull request workflow
+- CI Pipeline:
+  - GitHub Actions / GitLab CI / Jenkins
+  - Build stage
+  - Test stage (unit, integration)
+  - Security scanning (Trivy, SonarQube)
+  - Container build
+- Container Registry:
+  - Docker Registry / Harbor
+  - Image signing
+- CD Pipeline:
+  - ArgoCD / Flux for GitOps
+  - Helm charts / Kustomize
+  - Environment promotion (dev -> staging -> prod)
+- Deployment Targets:
+  - Kubernetes clusters
+  - Multiple environments
+- Notifications:
+  - Slack/Teams integration
+  - Deployment status
+Use direction LR for pipeline flow.`,
   },
 
   'oss-secrets': {
     name: 'Open Source Secrets Management',
-    description: 'HashiCorp Vault-based secrets management',
+    description: 'HashiCorp Vault-based secrets management with PKI and dynamic secrets',
     style: 'generic',
     quality: 'enterprise',
-    prompt: `Vault Secrets with HA Vault servers, Consul/Raft storage, auto-unseal, OIDC/LDAP, K8s auth, AppRole, KV v2, PKI, Database, Cloud credentials engines, Vault Agent, K8s CSI, Audit to SIEM, metrics to Prometheus, DR replication. Direction TB.`,
-  },
-
-  // ===== C4 TEMPLATES =====
-  'c4-context': {
-    name: 'C4 Context Diagram',
-    description: 'System context with actors and external systems',
-    style: 'c4',
-    quality: 'standard',
-    prompt: `C4 Context with End Users, Admin Users, System boundary with main system, External systems (Payment Gateway, Email Service, Auth Provider), Relationship labels.`,
-  },
-
-  'c4-container': {
-    name: 'C4 Container Diagram',
-    description: 'Container diagram with technology stack',
-    style: 'c4',
-    quality: 'standard',
-    prompt: `C4 Container with System boundary, Web App (React), Mobile App, API Gateway, User Service (Node), Order Service (Spring), Notification Service (Python), PostgreSQL, Redis, RabbitMQ, External systems. Direction TB.`,
-  },
-
-  // ===== UML TEMPLATES =====
-  'uml-class': {
-    name: 'UML Class Diagram',
-    description: 'Class diagram with relationships',
-    style: 'uml',
-    quality: 'standard',
-    prompt: `UML Class for e-commerce: Customer, Order, OrderItem, Product, Payment, Address classes with attributes and methods. Relationships with cardinality. Use stereotypes.`,
-  },
-
-  'uml-sequence': {
-    name: 'UML Sequence Diagram',
-    description: 'Message flow between components',
-    style: 'uml',
-    quality: 'standard',
-    prompt: `UML Sequence for order: User, Web UI, API Gateway, Order Service, Inventory, Payment, Notification. Numbered message flow with sync/async messages.`,
-  },
-
-  'uml-component': {
-    name: 'UML Component Diagram',
-    description: 'Component architecture with interfaces',
-    style: 'uml',
-    quality: 'standard',
-    prompt: `UML Component with API Gateway, User Service, Order Service, Product Service, Payment Service, Notification Service. Provided/required interfaces. External systems.`,
-  },
-
-  'uml-state': {
-    name: 'UML State Machine',
-    description: 'Object lifecycle states',
-    style: 'uml',
-    quality: 'standard',
-    prompt: `UML State for Order: Draft, Submitted, Payment Pending, Paid, Processing, Shipped, Delivered, Cancelled, Refunded states. Transitions with guards.`,
-  },
-
-  'uml-activity': {
-    name: 'UML Activity Diagram',
-    description: 'Workflow with swimlanes',
-    style: 'uml',
-    quality: 'standard',
-    prompt: `UML Activity for checkout: Customer, System, Payment, Warehouse swimlanes. Decision diamonds, fork/join bars, start/end nodes.`,
-  },
-
-  'uml-usecase': {
-    name: 'UML Use Case Diagram',
-    description: 'Actors and use cases',
-    style: 'uml',
-    quality: 'standard',
-    prompt: `UML Use Case: Customer, Admin, Payment System, Shipping actors. Browse, Search, Checkout, Track, Return use cases. Include/extend relationships.`,
-  },
-
-  // ===== ARCHIMATE TEMPLATES =====
-  'archimate-layered': {
-    name: 'ArchiMate Layered View',
-    description: 'Full ArchiMate layers',
-    style: 'archimate',
-    quality: 'enterprise',
-    prompt: `ArchiMate Layered: Strategy (#fff8e1), Business (#fffde7), Application (#e3f2fd), Technology (#e8f5e9) layers with elements and relationships (Realization, Assignment, Serving, Access, Triggering, Flow).`,
-  },
-
-  'archimate-motivation': {
-    name: 'ArchiMate Motivation View',
-    description: 'Goals, principles, requirements',
-    style: 'archimate',
-    quality: 'standard',
-    prompt: `ArchiMate Motivation (#fce4ec): Stakeholders, Drivers, Goals, Outcomes, Principles, Requirements, Constraints with influence/realization relationships.`,
-  },
-
-  'archimate-application': {
-    name: 'ArchiMate Application Cooperation',
-    description: 'Application integration patterns',
-    style: 'archimate',
-    quality: 'enterprise',
-    prompt: `ArchiMate Application (#e3f2fd): CRM, ERP, E-Commerce, Data Warehouse, Portal components. Services, Interfaces, Data Objects. API Gateway, Event Bus, ETL integration.`,
-  },
-
-  'archimate-technology': {
-    name: 'ArchiMate Technology View',
-    description: 'Infrastructure and deployment',
-    style: 'archimate',
-    quality: 'enterprise',
-    prompt: `ArchiMate Technology (#e8f5e9): Web, App, DB Tier nodes. Devices, Software (Linux, Docker, K8s, PostgreSQL, Redis, Kafka). Services, Artifacts, Networks.`,
-  },
-
-  'archimate-implementation': {
-    name: 'ArchiMate Implementation',
-    description: 'Migration and work packages',
-    style: 'archimate',
-    quality: 'standard',
-    prompt: `ArchiMate Implementation: Plateaus (Baseline, Transitions, Target), Work Packages, Deliverables, Events with realization relationships.`,
-  },
-
-  // ===== ELASTIC TEMPLATES =====
-  'elastic-observability': {
-    name: 'Elastic Observability',
-    description: 'Elastic observability stack',
-    style: 'elastic',
-    quality: 'enterprise',
-    prompt: `Elastic Observability: Filebeat, Metricbeat, APM Agents, Heartbeat, Fleet Server, Elastic Agent, Logstash, ES Cluster (Master, Data tiers), Kibana (Dashboards, APM, Logs, Metrics), Alerting, ML anomaly.`,
-  },
-
-  'elastic-siem': {
-    name: 'Elastic SIEM',
-    description: 'Elastic Security/SIEM',
-    style: 'elastic',
-    quality: 'enterprise',
-    prompt: `Elastic SIEM: Firewall, Windows (Winlogbeat), Linux (Auditbeat), Cloud, Network (Packetbeat) sources. Elastic Agent, Beats. ES Security indices. Kibana Security (Detection Engine, Timeline, Cases, Threat Intel), ML anomaly.`,
-  },
-
-  // ===== FIREBASE TEMPLATE =====
-  'firebase-mobile': {
-    name: 'Firebase Mobile Backend',
-    description: 'Firebase mobile app backend',
-    style: 'firebase',
-    quality: 'standard',
-    prompt: `Firebase Mobile: iOS, Android, Web clients. Firebase Auth (Social, Email, Phone). Firestore, Realtime DB, Cloud Storage with rules. Cloud Functions. FCM, In-app messaging. Crashlytics, Performance, Test Lab. Hosting, Dynamic Links.`,
-  },
-
-  // ===== ADDITIONAL CLOUD TEMPLATES =====
-  'alibaba-ecommerce': {
-    name: 'Alibaba Cloud E-Commerce',
-    description: 'Alibaba e-commerce architecture',
-    style: 'alibabacloud',
-    quality: 'enterprise',
-    prompt: `Alibaba E-Commerce: Anti-DDoS, WAF, CDN edge. SLB, ALB. ECS Auto Scaling, ACK, Function Compute. RDS MySQL, PolarDB, Redis, MongoDB, ES. OSS, NAS. MNS, API Gateway. RAM, KMS, Security Center. CloudMonitor, SLS, ARMS. Multi-AZ VPC.`,
-  },
-
-  'ibm-hybrid': {
-    name: 'IBM Cloud Hybrid',
-    description: 'IBM hybrid cloud architecture',
-    style: 'ibm',
-    quality: 'enterprise',
-    prompt: `IBM Hybrid: On-Prem (Bare Metal, VMware, DBs). Direct Link, VPN, Transit Gateway. VPC (Multi-AZ VSIs). OpenShift, Code Engine, Registry. Cloud Databases, Cloudant, Db2, Storage. App Connect, MQ, API Connect. IAM, Key Protect. Watson, Cloud Pak for Data.`,
-  },
-
-  'oci-enterprise': {
-    name: 'OCI Enterprise Landing Zone',
-    description: 'OCI enterprise landing zone',
-    style: 'oci',
-    quality: 'enterprise',
-    prompt: `OCI Landing Zone: Compartments (Root, Network, Security, Shared, Workloads). Hub VCN, Spoke VCNs, DRG, Gateways. Cloud Guard, Security Zones, Vault, WAF, Bastion. OKE, Instances, Functions. Autonomous DB, MySQL, NoSQL. Object, Block, File Storage. Logging, Monitoring, Events.`,
-  },
-
-  'digitalocean-app': {
-    name: 'DigitalOcean App Platform',
-    description: 'DigitalOcean app platform',
-    style: 'digitalocean',
-    quality: 'standard',
-    prompt: `DigitalOcean App: Web, API, Worker, Static services. Managed PostgreSQL, Redis, Spaces. DOKS (Node pools, LB, Block storage). VPC, LB, Firewall, Floating IPs. GitHub integration, Review apps. Metrics, Alerts, Uptime.`,
-  },
-
-  'openstack-private-cloud': {
-    name: 'OpenStack Private Cloud',
-    description: 'OpenStack private cloud',
-    style: 'openstack',
-    quality: 'enterprise',
-    prompt: `OpenStack Private: Keystone, Nova, Neutron, Cinder, Glance, Swift, Horizon control plane. Neutron ML2/OVS, Octavia, Designate. KVM, Nova compute. Ceph, Swift, Manila. Monasca. Barbican. TripleO/Kolla, Heat. 3-controller HA.`,
-  },
-
-  'outscale-enterprise': {
-    name: 'Outscale Enterprise',
-    description: 'Outscale European sovereign cloud',
-    style: 'outscale',
-    quality: 'standard',
-    prompt: `Outscale: Net (VPC), Internet Service, NAT, Subnets. Site-to-Site VPN, Direct Connect. VMs. BSU Block, OOS Object (S3-compatible). Security Groups, IAM, ACLs. Load Balancer. GDPR/SecNumCloud compliant.`,
-  },
-
-  // ===== ENTERPRISE ARCHITECTURE TEMPLATES =====
-  'togaf-layers': {
-    name: 'TOGAF Architecture Layers',
-    description: 'Four-layer TOGAF architecture',
-    style: 'enterprise',
-    quality: 'enterprise',
-    prompt: `TOGAF Layers: Business (#e3f2fd - Capabilities, Processes, Services), Application (#e8f5e9 - Components, Services, Interfaces), Data (#fff3e0 - Entities, Services, MDM), Technology (#f3e5f5 - Infrastructure, Platforms). Architecture Repository. Direction TB.`,
-  },
-
-  'zachman-framework': {
-    name: 'Zachman Framework View',
-    description: 'Zachman perspectives',
-    style: 'enterprise',
-    quality: 'enterprise',
-    prompt: `Zachman System Model: What (Data), How (Functions), Where (Locations), Who (Organization), When (Timing), Why (Goals). Matrix structure with clusters per perspective.`,
-  },
-
-  'capability-map': {
-    name: 'Business Capability Map',
-    description: 'Capability map with maturity',
-    style: 'enterprise',
-    quality: 'enterprise',
-    prompt: `Capability Map: Strategic (Strategy, EA, Portfolio, Innovation), Core (Customer, Product, Order, Service, Supply Chain), Supporting (HR, Finance, IT, Legal). Color by maturity: Red=Low, Yellow=Medium, Green=High. Show dependencies.`,
+    prompt: `HashiCorp Vault Secrets Management showing:
+- Vault Cluster:
+  - Vault servers (HA)
+  - Consul backend or Raft storage
+  - Auto-unseal with cloud KMS
+- Authentication:
+  - OIDC/LDAP integration
+  - Kubernetes auth method
+  - AppRole for applications
+- Secrets Engines:
+  - KV v2 (static secrets)
+  - PKI (certificate management)
+  - Database (dynamic credentials)
+  - AWS/Azure/GCP (cloud credentials)
+- Consumers:
+  - Applications via Vault Agent
+  - Kubernetes via CSI driver
+  - CI/CD pipelines
+- Audit:
+  - Audit logs to SIEM
+  - Metrics to Prometheus
+- DR:
+  - Replication to DR cluster
+  - Backup/restore procedures
+Use direction TB for architecture layers.`,
   },
 };
 
@@ -858,10 +770,15 @@ Use direction LR for left-to-right encryption flow.`,
 // SMART DESCRIPTION ENHANCEMENT
 // =============================================================================
 
+/**
+ * Analyzes a user's description and enhances it with additional context
+ * to help Claude generate a better diagram.
+ */
 function enhanceDescription(description, quality) {
   const keywords = description.toLowerCase();
   const enhancements = [];
   
+  // Detect common patterns and suggest additions
   if (keywords.includes('cmk') || keywords.includes('customer managed key') || keywords.includes('encryption')) {
     enhancements.push('Include key hierarchy showing root keys wrapping service-specific keys');
     enhancements.push('Show RBAC permissions for key access');
@@ -874,14 +791,6 @@ function enhanceDescription(description, quality) {
     if (!keywords.includes('sharepoint') && !keywords.includes('exchange') && !keywords.includes('teams')) {
       enhancements.push('Include relevant M365 workloads: SharePoint, Exchange, Teams');
     }
-  }
-  
-  if (keywords.includes('uml') || keywords.includes('class diagram')) {
-    enhancements.push('Use standard UML notation with stereotypes and relationship cardinality');
-  }
-  
-  if (keywords.includes('archimate')) {
-    enhancements.push('Use ArchiMate layer colors: Yellow=Business, Blue=Application, Green=Technology');
   }
   
   if (keywords.includes('serverless') || keywords.includes('lambda') || keywords.includes('function')) {
@@ -897,17 +806,33 @@ function enhanceDescription(description, quality) {
     }
   }
   
+  if (keywords.includes('api') && !keywords.includes('gateway')) {
+    enhancements.push('Include API Gateway or management layer');
+  }
+  
+  if (keywords.includes('microservice')) {
+    enhancements.push('Show service-to-service communication patterns');
+    enhancements.push('Consider service mesh or load balancing');
+  }
+  
+  // Quality-specific enhancements
   if (quality === 'enterprise') {
     if (!keywords.includes('monitor') && !keywords.includes('log') && !keywords.includes('observ')) {
-      enhancements.push('Add monitoring/logging layer');
+      enhancements.push('Add monitoring/logging layer (Log Analytics, CloudWatch, or Prometheus/Grafana)');
     }
     if (!keywords.includes('identity') && !keywords.includes('iam') && !keywords.includes('entra') && !keywords.includes('auth')) {
       enhancements.push('Add identity and access management components');
     }
+    if (!keywords.includes('automat') && !keywords.includes('pipeline') && !keywords.includes('devops')) {
+      enhancements.push('Consider automation/CI-CD components');
+    }
   }
   
   if (enhancements.length > 0) {
-    return `${description}\n\nAdditional recommendations:\n${enhancements.map(e => `- ${e}`).join('\n')}`;
+    return `${description}
+
+Additional recommendations for a complete diagram:
+${enhancements.map(e => `- ${e}`).join('\n')}`;
   }
   
   return description;
@@ -938,6 +863,7 @@ AVAILABLE IMPORTS FOR ${styleConfig.name.toUpperCase()}:
 ${styleConfig.imports}
 
 DIAGRAM STRUCTURE:
+\`\`\`python
 graph_attr = {
     "fontsize": "24",
     "bgcolor": "white",
@@ -952,10 +878,11 @@ with Diagram(
     filename="OUTPUT_PATH",
     outformat="png",
     show=False,
-    direction="LR",
+    direction="LR",  # LR for flows, TB for hierarchies
     graph_attr=graph_attr
 ):
     # Diagram code
+\`\`\`
 
 CLUSTER COLORS BY FUNCTION:
 - Identity/Users: #e3f2fd (light blue)
@@ -965,13 +892,6 @@ CLUSTER COLORS BY FUNCTION:
 - DR/Backup: #fff8e1 (light yellow)
 - Governance/RBAC: #f3e5f5 (light purple)
 - Data/Storage: #e0f7fa (light cyan)
-
-ARCHIMATE LAYER COLORS:
-- Strategy: #fff8e1 (gold)
-- Business: #fffde7 (yellow)
-- Application: #e3f2fd (blue)
-- Technology: #e8f5e9 (green)
-- Motivation: #fce4ec (pink)
 
 EDGE COLORS BY TYPE:
 - Red (bold): Encryption, security-critical paths
@@ -1121,6 +1041,7 @@ async function generateDiagramWithClaude(description, style, quality, options = 
     apiKey: config.anthropic.apiKey,
   });
 
+  // Enhance description based on quality level
   const enhancedDescription = quality === 'enterprise' 
     ? enhanceDescription(description, quality)
     : description;
@@ -1128,6 +1049,9 @@ async function generateDiagramWithClaude(description, style, quality, options = 
   console.log(`\n🤖 Calling Claude API (${config.anthropic.model})...`);
   console.log(`   Style: ${styleConfig.name}`);
   console.log(`   Quality: ${QUALITY_PRESETS[quality]?.name || quality}`);
+  if (options.verbose) {
+    console.log(`   Description: "${enhancedDescription.slice(0, 200)}..."\n`);
+  }
 
   const message = await client.messages.create({
     model: config.anthropic.model,
@@ -1135,7 +1059,13 @@ async function generateDiagramWithClaude(description, style, quality, options = 
     messages: [
       {
         role: 'user',
-        content: `Generate a Python diagrams architecture diagram for:\n\n${enhancedDescription}\n\nRespond with ONLY valid JSON containing name, title, description, and python_code fields.`,
+        content: `Generate a Python diagrams architecture diagram for:
+
+${enhancedDescription}
+
+Respond with ONLY valid JSON containing name, title, description, and python_code fields.
+The python_code must be a complete, executable Python script.
+CRITICAL: Use \\n for line breaks in labels, never actual newlines inside strings.`,
       },
     ],
     system: getSystemPrompt(style, quality),
@@ -1150,7 +1080,10 @@ async function generateDiagramWithClaude(description, style, quality, options = 
   try {
     diagramSpec = parseClaudeJsonResponse(responseText);
   } catch (parseError) {
-    console.error('Failed to parse Claude response');
+    console.error('Failed to parse Claude response as JSON:');
+    console.error('─'.repeat(60));
+    console.error(responseText.slice(0, 2000));
+    console.error('─'.repeat(60));
     throw new Error(`Invalid JSON response from Claude: ${parseError.message}`);
   }
 
@@ -1161,28 +1094,53 @@ async function generateDiagramWithClaude(description, style, quality, options = 
   diagramSpec.style = style;
   diagramSpec.quality = quality;
 
+  if (options.verbose) {
+    console.log('\n📝 Generated Python Code:');
+    console.log('─'.repeat(60));
+    console.log(diagramSpec.python_code);
+    console.log('─'.repeat(60));
+  }
+
   return diagramSpec;
 }
 
+// =============================================================================
+// PYTHON CODE SANITIZATION
+// =============================================================================
+
 function sanitizePythonCode(code) {
+  // Fix double-quoted strings with literal newlines
   let fixed = code.replace(/"([^"]*)"/g, (match, content) => {
     if (content.includes('\n')) {
       return `"${content.replace(/\n/g, '\\n')}"`;
     }
     return match;
   });
+
+  // Fix single-quoted strings with literal newlines
   fixed = fixed.replace(/'([^']*)'/g, (match, content) => {
     if (content.includes('\n')) {
       return `'${content.replace(/\n/g, '\\n')}'`;
     }
     return match;
   });
+
   return fixed;
 }
 
+// =============================================================================
+// PYTHON EXECUTION - RENDER DIAGRAM
+// =============================================================================
+
 async function renderDiagramWithPython(pythonCode, outputPath, verbose = false) {
   const sanitizedCode = sanitizePythonCode(pythonCode);
-  const finalCode = sanitizedCode.replace(
+
+  const modifiedCode = sanitizedCode.replace(
+    /filename\s*=\s*["']OUTPUT_PATH["']/g,
+    `filename="${outputPath.replace(/\\/g, '/')}"`
+  );
+
+  const finalCode = modifiedCode.replace(
     /filename\s*=\s*["'][^"']+["']/g,
     `filename="${outputPath.replace(/\\/g, '/')}"`
   );
@@ -1190,28 +1148,57 @@ async function renderDiagramWithPython(pythonCode, outputPath, verbose = false) 
   const pythonFile = path.join(config.temp.dir, config.temp.pythonFile);
   fs.writeFileSync(pythonFile, finalCode);
 
+  if (verbose) {
+    console.log(`\n🐍 Executing Python script: ${pythonFile}`);
+  }
+
   return new Promise((resolve, reject) => {
-    const python = spawn('python3', [pythonFile], { cwd: config.temp.dir });
+    const python = spawn('python3', [pythonFile], {
+      cwd: config.temp.dir,
+    });
+
+    let stdout = '';
     let stderr = '';
 
-    python.stderr.on('data', (data) => { stderr += data.toString(); });
+    python.stdout.on('data', (data) => {
+      stdout += data.toString();
+      if (verbose) {
+        process.stdout.write(data);
+      }
+    });
+
+    python.stderr.on('data', (data) => {
+      stderr += data.toString();
+      if (verbose) {
+        process.stderr.write(data);
+      }
+    });
 
     python.on('close', (code) => {
       if (code !== 0) {
-        console.error('\n❌ Python Error:\n' + stderr);
+        console.error('\n❌ Python Error:');
+        console.error('─'.repeat(60));
+        console.error(stderr);
+        console.error('─'.repeat(60));
+        console.error('\n📝 Python code that caused the error:');
+        console.error('─'.repeat(60));
+        console.error(finalCode);
+        console.error('─'.repeat(60));
         reject(new Error(`Python process exited with code ${code}`));
         return;
       }
+
       const imagePath = `${outputPath}.png`;
       if (!fs.existsSync(imagePath)) {
         reject(new Error(`Diagram image not created at ${imagePath}`));
         return;
       }
+
       resolve(imagePath);
     });
 
     python.on('error', (err) => {
-      reject(new Error(`Failed to start Python: ${err.message}`));
+      reject(new Error(`Failed to start Python: ${err.message}. Make sure Python 3 is installed.`));
     });
   });
 }
@@ -1265,16 +1252,23 @@ function cleanTemp() {
 
 async function publishToLocal(spec, imageBuffer) {
   const outputDir = config.local.outputDir;
+
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
+
   const imagePath = path.join(outputDir, `${spec.name}.png`);
   fs.writeFileSync(imagePath, imageBuffer);
-  return { path: path.resolve(imagePath), url: path.resolve(imagePath) };
+
+  return {
+    path: path.resolve(imagePath),
+    url: path.resolve(imagePath),
+  };
 }
 
 async function publishToGitHub(spec, imageBuffer) {
   const { token, owner, repo, branch, folder, userName, userEmail } = config.github;
+
   if (!token || !owner) {
     throw new Error('GitHub configuration missing. Set GITHUB_TOKEN and GITHUB_OWNER in .env');
   }
@@ -1283,20 +1277,29 @@ async function publishToGitHub(spec, imageBuffer) {
   const repoUrl = `https://${token}@github.com/${owner}/${repo}.git`;
 
   try {
-    if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true });
+    if (fs.existsSync(tempDir)) {
+      fs.rmSync(tempDir, { recursive: true });
+    }
     fs.mkdirSync(tempDir, { recursive: true });
 
     const git = simpleGit(tempDir);
+
     console.log('  Cloning repository...');
     await git.clone(repoUrl, tempDir, ['--depth', '1', '--branch', branch]);
+
     await git.addConfig('user.name', userName);
     await git.addConfig('user.email', userEmail);
 
     const imagesDir = path.join(tempDir, folder);
-    if (!fs.existsSync(imagesDir)) fs.mkdirSync(imagesDir, { recursive: true });
-    fs.writeFileSync(path.join(imagesDir, `${spec.name}.png`), imageBuffer);
+    if (!fs.existsSync(imagesDir)) {
+      fs.mkdirSync(imagesDir, { recursive: true });
+    }
+
+    const imagePath = path.join(imagesDir, `${spec.name}.png`);
+    fs.writeFileSync(imagePath, imageBuffer);
 
     await git.add('.');
+
     const status = await git.status();
     if (status.files.length > 0) {
       const timestamp = new Date().toISOString();
@@ -1312,12 +1315,15 @@ async function publishToGitHub(spec, imageBuffer) {
       url: `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${folder}/${spec.name}.png`,
     };
   } finally {
-    if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true });
+    if (fs.existsSync(tempDir)) {
+      fs.rmSync(tempDir, { recursive: true });
+    }
   }
 }
 
 async function publishToAzureDevOps(spec, imageBuffer) {
   const { token, org, project, repo, branch, folder, userName, userEmail } = config.devops;
+
   if (!token || !org || !project) {
     throw new Error('Azure DevOps configuration missing. Set AZDO_TOKEN, AZDO_ORG, and AZDO_PROJECT in .env');
   }
@@ -1326,20 +1332,29 @@ async function publishToAzureDevOps(spec, imageBuffer) {
   const repoUrl = `https://${token}@dev.azure.com/${org}/${project}/_git/${repo}`;
 
   try {
-    if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true });
+    if (fs.existsSync(tempDir)) {
+      fs.rmSync(tempDir, { recursive: true });
+    }
     fs.mkdirSync(tempDir, { recursive: true });
 
     const git = simpleGit(tempDir);
+
     console.log('  Cloning repository...');
     await git.clone(repoUrl, tempDir, ['--depth', '1', '--branch', branch]);
+
     await git.addConfig('user.name', userName);
     await git.addConfig('user.email', userEmail);
 
     const imagesDir = path.join(tempDir, folder);
-    if (!fs.existsSync(imagesDir)) fs.mkdirSync(imagesDir, { recursive: true });
-    fs.writeFileSync(path.join(imagesDir, `${spec.name}.png`), imageBuffer);
+    if (!fs.existsSync(imagesDir)) {
+      fs.mkdirSync(imagesDir, { recursive: true });
+    }
+
+    const imagePath = path.join(imagesDir, `${spec.name}.png`);
+    fs.writeFileSync(imagePath, imageBuffer);
 
     await git.add('.');
+
     const status = await git.status();
     if (status.files.length > 0) {
       const timestamp = new Date().toISOString();
@@ -1355,7 +1370,9 @@ async function publishToAzureDevOps(spec, imageBuffer) {
       url: `https://dev.azure.com/${org}/${project}/_git/${repo}?path=/${folder}/${spec.name}.png&version=GB${branch}`,
     };
   } finally {
-    if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true });
+    if (fs.existsSync(tempDir)) {
+      fs.rmSync(tempDir, { recursive: true });
+    }
   }
 }
 
@@ -1366,18 +1383,20 @@ async function publishToAzureDevOps(spec, imageBuffer) {
 async function commandGenerate(description, options) {
   console.log('');
   console.log('╔════════════════════════════════════════════════════════════╗');
-  console.log('║  AI Diagram Generator v6.0 (EA/UML/ArchiMate Support)      ║');
+  console.log('║     AI Diagram Generator v5.0 (Python Diagrams)            ║');
   console.log('╚════════════════════════════════════════════════════════════╝');
 
   let finalDescription = description || '';
   let style = options.style || 'azure';
   let quality = options.quality || 'standard';
   
+  // Handle template option
   if (options.template) {
     const template = TEMPLATES[options.template];
     if (!template) {
       console.error(`\n❌ Unknown template: ${options.template}`);
       console.log('Available templates: ' + Object.keys(TEMPLATES).join(', '));
+      console.log('Run "templates" command to see details.');
       process.exit(1);
     }
     
@@ -1396,7 +1415,10 @@ async function commandGenerate(description, options) {
     console.error('\n❌ Error: Please provide a description or use --template');
     console.log('\nUsage:');
     console.log('  node ai-diagram.js generate "Your architecture description"');
+    console.log('  node ai-diagram.js generate "Simple web app" --quality simple');
+    console.log('  node ai-diagram.js generate "Full platform" --quality enterprise');
     console.log('  node ai-diagram.js generate --template m365-cmk');
+    console.log('\nRun "templates" to see available templates.');
     process.exit(1);
   }
   
@@ -1425,10 +1447,14 @@ async function commandGenerate(description, options) {
     console.log(`   Image: ${imagePath}`);
     console.log(`   Python: ${path.join(config.temp.dir, config.temp.pythonFile)}`);
     console.log('');
+    console.log('👀 Preview:');
+    console.log(`   open "${imagePath}"`);
+    console.log('');
     console.log('📤 Publish:');
     console.log('   node ai-diagram.js publish --target local');
     console.log('   node ai-diagram.js publish --target github');
     console.log('   node ai-diagram.js publish --target devops');
+    console.log('');
 
     if (options.open) {
       const { exec } = await import('child_process');
@@ -1437,7 +1463,9 @@ async function commandGenerate(description, options) {
     }
   } catch (error) {
     console.error(`\n❌ Error: ${error.message}`);
-    if (options.verbose) console.error(error.stack);
+    if (options.verbose) {
+      console.error(error.stack);
+    }
     process.exit(1);
   }
 }
@@ -1445,18 +1473,21 @@ async function commandGenerate(description, options) {
 async function commandPreview(options) {
   console.log('');
   console.log('╔════════════════════════════════════════════════════════════╗');
-  console.log('║  AI Diagram Generator v6.0 - Preview                       ║');
+  console.log('║     AI Diagram Generator v5.0 - Preview                    ║');
   console.log('╚════════════════════════════════════════════════════════════╝');
 
   try {
     const spec = loadTempSpec();
+
     console.log('\n📋 Current Diagram:');
     console.log(`   Name: ${spec.name}`);
     console.log(`   Title: ${spec.title}`);
     console.log(`   Style: ${spec.style || 'unknown'}`);
     console.log(`   Quality: ${spec.quality || 'unknown'}`);
     console.log(`   Description: ${spec.description}`);
-    console.log(`\n📁 Image: ${getTempImagePath()}`);
+
+    const imagePath = getTempImagePath();
+    console.log(`\n📁 Image: ${imagePath}`);
 
     if (options.code) {
       console.log('\n🐍 Python Source:');
@@ -1468,7 +1499,7 @@ async function commandPreview(options) {
     if (options.open) {
       const { exec } = await import('child_process');
       const openCmd = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open';
-      exec(`${openCmd} "${getTempImagePath()}"`);
+      exec(`${openCmd} "${imagePath}"`);
     }
   } catch (error) {
     console.error(`\n❌ Error: ${error.message}`);
@@ -1479,11 +1510,12 @@ async function commandPreview(options) {
 async function commandRegenerate(options) {
   console.log('');
   console.log('╔════════════════════════════════════════════════════════════╗');
-  console.log('║  AI Diagram Generator v6.0 - Regenerate                    ║');
+  console.log('║     AI Diagram Generator v5.0 - Regenerate                 ║');
   console.log('╚════════════════════════════════════════════════════════════╝');
 
   try {
     const spec = loadTempSpec();
+
     console.log('\n📋 Regenerating diagram:');
     console.log(`   Name: ${spec.name}`);
     console.log(`   Title: ${spec.title}`);
@@ -1502,7 +1534,9 @@ async function commandRegenerate(options) {
     }
   } catch (error) {
     console.error(`\n❌ Error: ${error.message}`);
-    if (options.verbose) console.error(error.stack);
+    if (options.verbose) {
+      console.error(error.stack);
+    }
     process.exit(1);
   }
 }
@@ -1510,7 +1544,7 @@ async function commandRegenerate(options) {
 async function commandPublish(options) {
   console.log('');
   console.log('╔════════════════════════════════════════════════════════════╗');
-  console.log('║  AI Diagram Generator v6.0 - Publish                       ║');
+  console.log('║     AI Diagram Generator v5.0 - Publish                    ║');
   console.log('╚════════════════════════════════════════════════════════════╝');
 
   try {
@@ -1577,6 +1611,7 @@ async function commandPublish(options) {
     } else {
       console.log(`\n![${spec.title}](${result.url})`);
     }
+
     console.log('');
 
     if (options.clean) {
@@ -1585,7 +1620,9 @@ async function commandPublish(options) {
     }
   } catch (error) {
     console.error(`\n❌ Error: ${error.message}`);
-    if (options.verbose) console.error(error.stack);
+    if (options.verbose) {
+      console.error(error.stack);
+    }
     process.exit(1);
   }
 }
@@ -1593,38 +1630,31 @@ async function commandPublish(options) {
 async function commandStyles() {
   console.log('');
   console.log('╔════════════════════════════════════════════════════════════╗');
-  console.log('║  AI Diagram Generator v6.0 - Available Styles              ║');
+  console.log('║     AI Diagram Generator v5.0 - Available Styles           ║');
   console.log('╚════════════════════════════════════════════════════════════╝');
   console.log('');
   
-  const byCategory = {};
   for (const [key, style] of Object.entries(DIAGRAM_STYLES)) {
-    const cat = style.category || 'Other';
-    if (!byCategory[cat]) byCategory[cat] = [];
-    byCategory[cat].push({ key, name: style.name });
+    console.log(`  ${key.padEnd(12)} ${style.name}`);
   }
   
-  for (const [cat, styles] of Object.entries(byCategory)) {
-    console.log(`── ${cat.toUpperCase()} ──`);
-    for (const s of styles) {
-      console.log(`  ${s.key.padEnd(16)} ${s.name}`);
-    }
-    console.log('');
-  }
-  
+  console.log('');
   console.log('Usage:');
   console.log('  node ai-diagram.js generate "description" --style azure');
-  console.log('  node ai-diagram.js generate "class diagram" --style uml');
-  console.log('  node ai-diagram.js generate "layered view" --style archimate');
+  console.log('  node ai-diagram.js generate "description" --style aws');
+  console.log('  node ai-diagram.js generate "description" --style gcp');
+  console.log('  node ai-diagram.js generate "description" --style k8s');
+  console.log('  node ai-diagram.js generate "description" --style generic');
   console.log('');
 }
 
 async function commandTemplates() {
   console.log('');
   console.log('╔════════════════════════════════════════════════════════════╗');
-  console.log('║  AI Diagram Generator v6.0 - Available Templates           ║');
+  console.log('║     AI Diagram Generator v5.0 - Available Templates        ║');
   console.log('╚════════════════════════════════════════════════════════════╝');
   
+  // Group by style
   const byStyle = {};
   for (const [key, template] of Object.entries(TEMPLATES)) {
     const style = template.style || 'generic';
@@ -1636,22 +1666,26 @@ async function commandTemplates() {
     console.log(`\n  ── ${DIAGRAM_STYLES[style]?.name || style.toUpperCase()} ──`);
     for (const t of templates) {
       console.log(`  ${t.key}`);
-      console.log(`     ${t.name} - ${t.description}`);
+      console.log(`     ${t.name}`);
+      console.log(`     ${t.description}`);
     }
   }
   
   console.log('');
   console.log('Usage:');
   console.log('  node ai-diagram.js generate --template m365-cmk --open');
-  console.log('  node ai-diagram.js generate --template uml-class --open');
-  console.log('  node ai-diagram.js generate "Add Redis" --template aws-serverless');
+  console.log('  node ai-diagram.js generate --template aws-serverless --open');
+  console.log('  node ai-diagram.js generate --template oss-observability --open');
+  console.log('');
+  console.log('Customize with additional description:');
+  console.log('  node ai-diagram.js generate "Add Redis cache" --template aws-serverless');
   console.log('');
 }
 
 async function commandQuality() {
   console.log('');
   console.log('╔════════════════════════════════════════════════════════════╗');
-  console.log('║  AI Diagram Generator v6.0 - Quality Levels                ║');
+  console.log('║     AI Diagram Generator v5.0 - Quality Levels             ║');
   console.log('╚════════════════════════════════════════════════════════════╝');
   console.log('');
   
@@ -1676,18 +1710,18 @@ async function commandClean() {
 }
 
 // =============================================================================
-// MAIN - CLI SETUP
+// MAIN
 // =============================================================================
 
 program
   .name('ai-diagram')
-  .description('AI-powered architecture diagram generator with EA, UML, ArchiMate, and cloud provider support')
-  .version('6.0.0');
+  .description('AI-powered architecture diagram generator using Python diagrams library')
+  .version('5.0.0');
 
 program
   .command('generate [description]')
   .description('Generate a diagram from natural language or template')
-  .option('-s, --style <style>', 'Diagram style: azure, aws, gcp, k8s, generic, uml, archimate, c4, enterprise, elastic, firebase, alibabacloud, ibm, oci, digitalocean, openstack, outscale', 'azure')
+  .option('-s, --style <style>', 'Diagram style: azure, aws, gcp, k8s, generic', 'azure')
   .option('-q, --quality <quality>', 'Quality level: simple, standard, enterprise', 'standard')
   .option('-t, --template <template>', 'Use a predefined template')
   .option('-o, --open', 'Open the generated image automatically')
