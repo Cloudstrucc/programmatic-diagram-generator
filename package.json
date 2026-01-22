@@ -1,0 +1,24 @@
+{
+  "name": "azure-diagram-generator",
+  "version": "2.0.0",
+  "description": "Generate Azure architecture diagrams and publish to GitHub/Azure DevOps",
+  "main": "generate-diagram.js",
+  "type": "module",
+  "scripts": {
+    "generate": "node generate-diagram.js",
+    "generate:local": "node generate-diagram.js --target local",
+    "generate:github": "node generate-diagram.js --target github",
+    "generate:devops": "node generate-diagram.js --target devops",
+    "generate:all-targets": "node generate-diagram.js --target all"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.0",
+    "pako": "^2.1.0",
+    "simple-git": "^3.22.0",
+    "commander": "^11.1.0",
+    "dotenv": "^16.3.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
