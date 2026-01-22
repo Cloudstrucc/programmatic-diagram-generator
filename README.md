@@ -106,10 +106,10 @@ Edit `.env` with your configuration (see [Configuration](#configuration)).
 
 ```bash
 # Test the setup
-node ai-diagram-v5.js styles
+node ai-diagram.js styles
 
 # Generate a simple test diagram
-node ai-diagram-v5.js generate "simple web app with database" --quality simple --open
+node ai-diagram.js generate "simple web app with database" --quality simple --open
 ```
 
 ---
@@ -118,19 +118,19 @@ node ai-diagram-v5.js generate "simple web app with database" --quality simple -
 
 ```bash
 # Generate a diagram from description
-node ai-diagram-v5.js generate "Kubernetes with Prometheus and Grafana" --style generic --open
+node ai-diagram.js generate "Kubernetes with Prometheus and Grafana" --style generic --open
 
 # Use a pre-built template
-node ai-diagram-v5.js generate --template m365-cmk --open
+node ai-diagram.js generate --template m365-cmk --open
 
 # Enterprise-grade from description
-node ai-diagram-v5.js generate "Azure CMK architecture" --style azure --quality enterprise --open
+node ai-diagram.js generate "Azure CMK architecture" --style azure --quality enterprise --open
 
 # List available templates
-node ai-diagram-v5.js templates
+node ai-diagram.js templates
 
 # List available styles
-node ai-diagram-v5.js styles
+node ai-diagram.js styles
 ```
 
 ---
@@ -209,33 +209,33 @@ COMMIT_MESSAGE_PREFIX=docs(diagrams): update architecture diagrams
 
 ```bash
 # Generate a diagram
-node ai-diagram-v5.js generate "Your architecture description"
-node ai-diagram-v5.js generate --template <template-name>
+node ai-diagram.js generate "Your architecture description"
+node ai-diagram.js generate --template <template-name>
 
 # List templates
-node ai-diagram-v5.js templates
+node ai-diagram.js templates
 
 # List styles (icon packs)
-node ai-diagram-v5.js styles
+node ai-diagram.js styles
 
 # List quality presets
-node ai-diagram-v5.js quality
+node ai-diagram.js quality
 
 # Preview current diagram
-node ai-diagram-v5.js preview --open
-node ai-diagram-v5.js preview --code  # Show Python source
+node ai-diagram.js preview --open
+node ai-diagram.js preview --code  # Show Python source
 
 # Regenerate after manual edits to the Python file
-node ai-diagram-v5.js regenerate --open
+node ai-diagram.js regenerate --open
 
 # Publish to target
-node ai-diagram-v5.js publish --target local
-node ai-diagram-v5.js publish --target github
-node ai-diagram-v5.js publish --target devops
-node ai-diagram-v5.js publish --target all
+node ai-diagram.js publish --target local
+node ai-diagram.js publish --target github
+node ai-diagram.js publish --target devops
+node ai-diagram.js publish --target all
 
 # Clean temp files
-node ai-diagram-v5.js clean
+node ai-diagram.js clean
 ```
 
 ### Command Options
@@ -280,19 +280,19 @@ The generator supports multiple icon packs for different cloud providers and tec
 
 ```bash
 # Azure (default)
-node ai-diagram-v5.js generate "Azure CMK with Key Vault" --style azure
+node ai-diagram.js generate "Azure CMK with Key Vault" --style azure
 
 # AWS
-node ai-diagram-v5.js generate "Serverless with Lambda and DynamoDB" --style aws
+node ai-diagram.js generate "Serverless with Lambda and DynamoDB" --style aws
 
 # GCP
-node ai-diagram-v5.js generate "Data platform with BigQuery" --style gcp
+node ai-diagram.js generate "Data platform with BigQuery" --style gcp
 
 # Kubernetes
-node ai-diagram-v5.js generate "Microservices with Ingress" --style k8s
+node ai-diagram.js generate "Microservices with Ingress" --style k8s
 
 # Generic/Open-Source
-node ai-diagram-v5.js generate "Vault secrets with Prometheus monitoring" --style generic
+node ai-diagram.js generate "Vault secrets with Prometheus monitoring" --style generic
 ```
 
 ---
@@ -311,13 +311,13 @@ Control the level of detail in generated diagrams.
 
 ```bash
 # Simple - quick overview
-node ai-diagram-v5.js generate "web app with database" --quality simple
+node ai-diagram.js generate "web app with database" --quality simple
 
 # Standard - balanced (default)
-node ai-diagram-v5.js generate "microservices architecture" --quality standard
+node ai-diagram.js generate "microservices architecture" --quality standard
 
 # Enterprise - comprehensive with all layers
-node ai-diagram-v5.js generate "M365 CMK encryption" --quality enterprise
+node ai-diagram.js generate "M365 CMK encryption" --quality enterprise
 ```
 
 **Enterprise quality automatically includes:**
@@ -331,7 +331,7 @@ node ai-diagram-v5.js generate "M365 CMK encryption" --quality enterprise
 
 ## Templates
 
-Pre-built templates for common architecture patterns. Use `node ai-diagram-v5.js templates` to see all available templates.
+Pre-built templates for common architecture patterns. Use `node ai-diagram.js templates` to see all available templates.
 
 ### Azure Templates
 
@@ -373,13 +373,13 @@ Pre-built templates for common architecture patterns. Use `node ai-diagram-v5.js
 
 ```bash
 # Use template directly
-node ai-diagram-v5.js generate --template m365-cmk --open
+node ai-diagram.js generate --template m365-cmk --open
 
 # Customize a template with additional requirements
-node ai-diagram-v5.js generate "Add Intune MDM" --template zero-trust --open
+node ai-diagram.js generate "Add Intune MDM" --template zero-trust --open
 
 # List all templates with descriptions
-node ai-diagram-v5.js templates
+node ai-diagram.js templates
 ```
 
 ---
@@ -476,49 +476,49 @@ Frameworks:     React, Vue, Angular, Django, Flask, Spring
 ### M365 Customer Managed Keys (Enterprise)
 
 ```bash
-node ai-diagram-v5.js generate --template m365-cmk --open
+node ai-diagram.js generate --template m365-cmk --open
 ```
 
 Or with custom description:
 
 ```bash
-node ai-diagram-v5.js generate "M365 CMK architecture showing Key Vault with HSM-protected root keys wrapping DEP keys for SharePoint, Exchange and Teams. Include Entra ID authentication, RBAC permissions, geo-replication to DR vault, DevOps automation for key deployment, and Log Analytics for audit monitoring" --style azure --quality enterprise --open
+node ai-diagram.js generate "M365 CMK architecture showing Key Vault with HSM-protected root keys wrapping DEP keys for SharePoint, Exchange and Teams. Include Entra ID authentication, RBAC permissions, geo-replication to DR vault, DevOps automation for key deployment, and Log Analytics for audit monitoring" --style azure --quality enterprise --open
 ```
 
 ### Kubernetes Microservices with Service Mesh
 
 ```bash
-node ai-diagram-v5.js generate --template k8s-microservices --open
+node ai-diagram.js generate --template k8s-microservices --open
 ```
 
 Or custom:
 
 ```bash
-node ai-diagram-v5.js generate "Kubernetes microservices with Istio service mesh, secrets in HashiCorp Vault, observability with Prometheus and Grafana, and GitOps deployment with ArgoCD" --style generic --quality enterprise --open
+node ai-diagram.js generate "Kubernetes microservices with Istio service mesh, secrets in HashiCorp Vault, observability with Prometheus and Grafana, and GitOps deployment with ArgoCD" --style generic --quality enterprise --open
 ```
 
 ### AWS Serverless
 
 ```bash
-node ai-diagram-v5.js generate --template aws-serverless --open
+node ai-diagram.js generate --template aws-serverless --open
 ```
 
 ### Simple Web Application
 
 ```bash
-node ai-diagram-v5.js generate "React frontend, Node.js API, PostgreSQL database" --quality simple --open
+node ai-diagram.js generate "React frontend, Node.js API, PostgreSQL database" --quality simple --open
 ```
 
 ### Azure Hub-Spoke Network
 
 ```bash
-node ai-diagram-v5.js generate "Azure hub-spoke network with central firewall, VPN gateway, and three spoke VNets for prod, dev, and shared services" --style azure --quality standard --open
+node ai-diagram.js generate "Azure hub-spoke network with central firewall, VPN gateway, and three spoke VNets for prod, dev, and shared services" --style azure --quality standard --open
 ```
 
 ### Open Source Observability Stack
 
 ```bash
-node ai-diagram-v5.js generate --template oss-observability --open
+node ai-diagram.js generate --template oss-observability --open
 ```
 
 ---
@@ -530,7 +530,7 @@ node ai-diagram-v5.js generate --template oss-observability --open
 Saves diagrams to the `./output` directory (configurable via `LOCAL_OUTPUT_DIR`).
 
 ```bash
-node ai-diagram-v5.js publish --target local
+node ai-diagram.js publish --target local
 ```
 
 ### GitHub Publishing
@@ -539,7 +539,7 @@ Pushes diagrams to a GitHub repository.
 
 ```bash
 # Ensure GITHUB_* variables are set in .env
-node ai-diagram-v5.js publish --target github
+node ai-diagram.js publish --target github
 ```
 
 **Output:**
@@ -556,13 +556,13 @@ Pushes diagrams to an Azure DevOps Git repository.
 
 ```bash
 # Ensure AZDO_* variables are set in .env
-node ai-diagram-v5.js publish --target devops
+node ai-diagram.js publish --target devops
 ```
 
 ### Publish to All Targets
 
 ```bash
-node ai-diagram-v5.js publish --target all --clean
+node ai-diagram.js publish --target all --clean
 ```
 
 The `--clean` flag removes temp files after successful publishing.
@@ -643,7 +643,7 @@ ImportError: cannot import name 'Fluentd' from 'diagrams.onprem.logging'
 **Solution:**
 1. Edit the generated Python file in `.temp-ai-diagrams/diagram.py`
 2. Replace the invalid import with a valid alternative
-3. Run `node ai-diagram-v5.js regenerate --open`
+3. Run `node ai-diagram.js regenerate --open`
 
 ### Python Syntax Errors
 
@@ -731,10 +731,10 @@ To debug or understand what's being generated:
 
 ```bash
 # Show the Python code without regenerating
-node ai-diagram-v5.js preview --code
+node ai-diagram.js preview --code
 
 # Generate with verbose output
-node ai-diagram-v5.js generate "your description" --verbose
+node ai-diagram.js generate "your description" --verbose
 
 # View the file directly
 cat .temp-ai-diagrams/diagram.py
@@ -746,16 +746,16 @@ You can manually edit the generated Python code:
 
 ```bash
 # 1. Generate initial diagram
-node ai-diagram-v5.js generate "your architecture" --style azure
+node ai-diagram.js generate "your architecture" --style azure
 
 # 2. Edit the Python file
 code .temp-ai-diagrams/diagram.py
 
 # 3. Regenerate the image
-node ai-diagram-v5.js regenerate --open
+node ai-diagram.js regenerate --open
 
 # 4. Publish when satisfied
-node ai-diagram-v5.js publish --target local
+node ai-diagram.js publish --target local
 ```
 
 ---
@@ -769,7 +769,7 @@ node ai-diagram-v5.js publish --target local
 
 ### Adding New Templates
 
-Templates are defined in the `TEMPLATES` object in `ai-diagram-v5.js`. Each template includes:
+Templates are defined in the `TEMPLATES` object in `ai-diagram.js`. Each template includes:
 
 ```javascript
 'template-name': {
