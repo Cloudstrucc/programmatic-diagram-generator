@@ -50,7 +50,7 @@ Generate professional architecture diagrams from natural language descriptions u
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/cloudstrucc/programmatic-diagram-generator.git
+git clone https://github.com/Cloudstrucc/programmatic-diagram-generator.git
 cd programmatic-diagram-generator
 ```
 
@@ -759,6 +759,39 @@ node ai-diagram.js publish --target local
 ```
 
 ---
+
+### Troubleshooting 
+
+### Graphviz Homebrew Linking Error (macOS)
+
+**Error:**
+```
+Error: Cannot link xorgproto
+Another version is already linked: /usr/local/Cellar/xorgproto/2024.1
+```
+
+**Cause:** Homebrew has permission issues or conflicting package versions in `/usr/local`.
+
+**Solution:**
+
+#### If you are having issues installing graphviz on MacOS (Silcon) see below steps to resolve
+
+1. Fix permissions (run as your normal user, not root):
+```bash
+sudo chown -R $(whoami) /usr/local/include /usr/local/lib /usr/local/Cellar
+```
+
+2. Unlink and relink the conflicting package:
+```bash
+brew unlink xorgproto && brew link xorgproto
+```
+
+3. Retry the Graphviz installation:
+```bash
+brew install graphviz
+```
+
+> ⚠️ **Note:** Never run `brew` commands with `sudo`. If you see "Running Homebrew as root is extremely dangerous", you're using `sudo` - remove it and run as your normal user.
 
 ## Contributing
 
