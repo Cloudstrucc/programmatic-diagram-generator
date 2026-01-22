@@ -163,3 +163,6 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+
+.temp-ai-diagrams/*
+
