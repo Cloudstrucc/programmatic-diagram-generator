@@ -6,6 +6,7 @@ services:
       - plantuml
     environment:
       - KROKI_PLANTUML_HOST=plantuml
+      - KROKI_SAFE_MODE=unsafe
     ports:
       - "8000:8000"
 
@@ -14,3 +15,5 @@ services:
     environment:
       - PLANTUML_LIMIT_SIZE=8192
       - ALLOW_PLANTUML_INCLUDE=true
+    expose:
+      - "8080"
