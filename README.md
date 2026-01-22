@@ -1,15 +1,18 @@
 # AI-Powered Architecture Diagram Generator
 
-Generate professional architecture diagrams from natural language descriptions using Claude AI and PlantUML.
+Generate professional architecture diagrams from natural language descriptions using Claude AI and Python Diagrams.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)
+![Python](https://img.shields.io/badge/python-%3E%3D3.8-blue.svg)
 
 ## Features
 
-- 🤖 **AI-Powered** - Describe your architecture in plain English, Claude generates the PlantUML
-- 🎨 **Multiple Styles** - C4 Model, Azure Icons, AWS Icons, or Plain PlantUML
-- 🐳 **Local Rendering** - Docker-based Kroki for fast, offline diagram generation
+- 🤖 **AI-Powered** - Describe your architecture in plain English, Claude generates professional diagrams
+- 🎨 **Multiple Styles** - Azure, AWS, GCP, Kubernetes, and Generic/Open-Source icon packs
+- 📊 **Quality Presets** - Simple, Standard, or Enterprise-grade detail levels
+- 📋 **Pre-built Templates** - M365 CMK, Zero Trust, AWS Serverless, K8s Microservices, and more
+- 🧠 **Smart Enhancement** - Automatically suggests missing components for enterprise diagrams
 - 📤 **Multi-Target Publishing** - Push to GitHub, Azure DevOps, or save locally
 - 🔄 **Iterative Workflow** - Generate, preview, edit, regenerate, then publish
 
@@ -17,21 +20,25 @@ Generate professional architecture diagrams from natural language descriptions u
 
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
-- [Docker Setup](#docker-setup)
-- [Configuration](#configuration)
+- [Quick Start](#quick-start)
 - [Usage](#usage)
 - [Diagram Styles](#diagram-styles)
+- [Quality Presets](#quality-presets)
+- [Templates](#templates)
+- [Available Icons](#available-icons)
 - [Examples](#examples)
 - [Publishing](#publishing)
 - [Using Images in Markdown](#using-images-in-markdown)
 - [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
 
 ---
 
 ## Prerequisites
 
 - **Node.js** 18.0.0 or higher
-- **Docker Desktop** (for local diagram rendering)
+- **Python** 3.8 or higher
+- **Graphviz** (for diagram rendering)
 - **Anthropic API Key** (for Claude AI)
 - **GitHub Token** (optional, for GitHub publishing)
 - **Azure DevOps PAT** (optional, for DevOps publishing)
@@ -47,13 +54,47 @@ git clone https://github.com/cloudstrucc/programmatic-diagram-generator.git
 cd programmatic-diagram-generator
 ```
 
-### 2. Install Dependencies
+### 2. Install Node.js Dependencies
 
 ```bash
 npm install
 ```
 
-### 3. Create Environment File
+### 3. Install Python Dependencies
+
+```bash
+pip install diagrams
+# or
+pip3 install diagrams
+```
+
+### 4. Install Graphviz
+
+Graphviz is required by the Python `diagrams` library to render diagrams.
+
+**macOS:**
+```bash
+brew install graphviz
+```
+
+**Ubuntu/Debian:**
+```bash
+sudo apt-get install graphviz
+```
+
+**Windows:**
+```bash
+choco install graphviz
+# or download from https://graphviz.org/download/
+```
+
+**Verify installation:**
+```bash
+dot -V
+# Should output something like: dot - graphviz version 2.43.0
+```
+
+### 5. Create Environment File
 
 ```bash
 cp .env.example .env
@@ -61,133 +102,36 @@ cp .env.example .env
 
 Edit `.env` with your configuration (see [Configuration](#configuration)).
 
+### 6. Verify Installation
+
+```bash
+# Test the setup
+node ai-diagram-v5.js styles
+
+# Generate a simple test diagram
+node ai-diagram-v5.js generate "simple web app with database" --quality simple --open
+```
+
 ---
 
-## Docker Setup
-
-The diagram generator uses **Kroki** with **PlantUML Server** to render diagrams locally. This provides fast rendering and supports Azure/AWS icons.
-
-### Installing Docker Desktop
-
-1. Download Docker Desktop from [docker.com](https://www.docker.com/products/docker-desktop/)
-2. Install and start Docker Desktop
-3. Verify installation:
-   ```bash
-   docker --version
-   docker-compose --version
-   ```
-
-### Starting the Diagram Services
+## Quick Start
 
 ```bash
-# Start Kroki and PlantUML services
-docker-compose up -d
+# Generate a diagram from description
+node ai-diagram-v5.js generate "Kubernetes with Prometheus and Grafana" --style generic --open
 
-# Verify services are running
-docker-compose ps
+# Use a pre-built template
+node ai-diagram-v5.js generate --template m365-cmk --open
+
+# Enterprise-grade from description
+node ai-diagram-v5.js generate "Azure CMK architecture" --style azure --quality enterprise --open
+
+# List available templates
+node ai-diagram-v5.js templates
+
+# List available styles
+node ai-diagram-v5.js styles
 ```
-
-You should see both `kroki` and `plantuml` services running.
-
-### Checking Service Health
-
-```bash
-# Test Kroki is responding
-curl http://localhost:8000/health
-
-# Or open in browser
-open http://localhost:8000
-```
-
-### Stopping Services
-
-```bash
-# Stop services (keeps containers)
-docker-compose stop
-
-# Stop and remove containers
-docker-compose down
-```
-
-### Handling Port Conflicts
-
-If port 8000 is already in use:
-
-#### Option 1: Find and Stop Conflicting Container
-
-```bash
-# List all running containers
-docker ps
-
-# Find container using port 8000
-docker ps --filter "publish=8000"
-
-# Stop the conflicting container
-docker stop <container_id>
-
-# Or remove it completely
-docker rm -f <container_id>
-```
-
-#### Option 2: Change the Port
-
-Edit `docker-compose.yml` to use a different port:
-
-```yaml
-services:
-  kroki:
-    ports:
-      - "8001:8000"  # Changed from 8000 to 8001
-```
-
-Then update your `.env`:
-
-```bash
-KROKI_LOCAL_URL=http://localhost:8001
-```
-
-#### Option 3: Remove All Unused Docker Resources
-
-```bash
-# Remove all stopped containers
-docker container prune
-
-# Remove all unused images
-docker image prune -a
-
-# Nuclear option: remove everything
-docker system prune -a
-```
-
-### Docker Compose Configuration
-
-The `docker-compose.yml` file:
-
-```yaml
-version: "3"
-services:
-  kroki:
-    image: yuzutech/kroki
-    depends_on:
-      - plantuml
-    environment:
-      - KROKI_PLANTUML_HOST=plantuml
-      - KROKI_SAFE_MODE=unsafe
-    ports:
-      - "8000:8000"
-
-  plantuml:
-    image: plantuml/plantuml-server:jetty
-    environment:
-      - PLANTUML_LIMIT_SIZE=8192
-      - ALLOW_PLANTUML_INCLUDE=true
-    expose:
-      - "8080"
-```
-
-Key settings:
-- `KROKI_SAFE_MODE=unsafe` - Enables remote includes for Azure/AWS icons
-- `ALLOW_PLANTUML_INCLUDE=true` - Allows PlantUML to fetch icon libraries from GitHub
 
 ---
 
@@ -197,27 +141,18 @@ Create a `.env` file in the project root:
 
 ```bash
 # =============================================================================
-# ANTHROPIC API
+# ANTHROPIC API (Required)
 # =============================================================================
 ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 # Model options (best to fastest):
-#   claude-opus-4-20250514      - Most intelligent
+#   claude-opus-4-20250514      - Most intelligent, best quality
 #   claude-sonnet-4-5-20250929  - Good balance (DEFAULT)
 #   claude-haiku-3-5-20250929   - Fastest, cheapest
 CLAUDE_MODEL=claude-sonnet-4-5-20250929
 
 # =============================================================================
-# KROKI / PLANTUML
-# =============================================================================
-# Local Kroki (for C4/plain styles)
-KROKI_LOCAL_URL=http://localhost:8000
-
-# Public Kroki fallback (if local not running)
-KROKI_PUBLIC_URL=https://kroki.io
-
-# =============================================================================
-# GITHUB (Optional)
+# GITHUB (Optional - for publishing)
 # =============================================================================
 GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 GITHUB_OWNER=your-username
@@ -228,7 +163,7 @@ GITHUB_USER_NAME=Your Name
 GITHUB_USER_EMAIL=your.email@example.com
 
 # =============================================================================
-# AZURE DEVOPS (Optional)
+# AZURE DEVOPS (Optional - for publishing)
 # =============================================================================
 AZDO_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 AZDO_ORG=your-org
@@ -270,158 +205,320 @@ COMMIT_MESSAGE_PREFIX=docs(diagrams): update architecture diagrams
 
 ## Usage
 
-### Basic Commands
+### Commands
 
 ```bash
 # Generate a diagram
-node ai-diagram.js generate "Your architecture description"
+node ai-diagram-v5.js generate "Your architecture description"
+node ai-diagram-v5.js generate --template <template-name>
+
+# List templates
+node ai-diagram-v5.js templates
+
+# List styles (icon packs)
+node ai-diagram-v5.js styles
+
+# List quality presets
+node ai-diagram-v5.js quality
 
 # Preview current diagram
-node ai-diagram.js preview --open
+node ai-diagram-v5.js preview --open
+node ai-diagram-v5.js preview --code  # Show Python source
 
-# Show PlantUML source
-node ai-diagram.js preview --puml
-
-# Regenerate after manual edits
-node ai-diagram.js regenerate --open
+# Regenerate after manual edits to the Python file
+node ai-diagram-v5.js regenerate --open
 
 # Publish to target
-node ai-diagram.js publish --target local
-node ai-diagram.js publish --target github
-node ai-diagram.js publish --target devops
-node ai-diagram.js publish --target all
-
-# List available styles
-node ai-diagram.js styles
+node ai-diagram-v5.js publish --target local
+node ai-diagram-v5.js publish --target github
+node ai-diagram-v5.js publish --target devops
+node ai-diagram-v5.js publish --target all
 
 # Clean temp files
-node ai-diagram.js clean
+node ai-diagram-v5.js clean
 ```
 
 ### Command Options
 
 ```bash
-generate <description>
-  -s, --style <style>   Diagram style: c4, azure, aws, plain (default: c4)
-  -o, --open            Open image after generation
-  -v, --verbose         Show detailed output
+generate [description]
+  -s, --style <style>       Icon pack: azure, aws, gcp, k8s, generic (default: azure)
+  -q, --quality <quality>   Detail level: simple, standard, enterprise (default: standard)
+  -t, --template <template> Use a predefined template
+  -o, --open                Open image after generation
+  -v, --verbose             Show detailed output including Python code
 
 preview
-  -o, --open            Open the image
-  -p, --puml            Show PlantUML source code
+  -o, --open                Open the image
+  -c, --code                Show Python source code
 
 regenerate
-  -o, --open            Open after regeneration
-  -v, --verbose         Show detailed output
+  -o, --open                Open after regeneration
+  -v, --verbose             Show detailed output
 
 publish
-  -t, --target <target> Target: local, github, devops, all (default: local)
-  -c, --clean           Clean temp files after publishing
-  -v, --verbose         Show detailed output
+  -t, --target <target>     Target: local, github, devops, all (default: local)
+  -c, --clean               Clean temp files after publishing
+  -v, --verbose             Show detailed output
 ```
 
 ---
 
 ## Diagram Styles
 
-| Style | Description | Rendering | Best For |
-|-------|-------------|-----------|----------|
-| `c4` | C4 Model diagrams | Local Kroki (fast) | System architecture, containers |
-| `azure` | Azure service icons | PlantUML Server | Azure-specific architectures |
-| `aws` | AWS service icons | PlantUML Server | AWS-specific architectures |
-| `plain` | Basic PlantUML shapes | Local Kroki (fast) | Simple, universal diagrams |
+The generator supports multiple icon packs for different cloud providers and technologies.
+
+| Style | Description | Best For |
+|-------|-------------|----------|
+| `azure` | Microsoft Azure icons | Azure architectures, M365, Power Platform |
+| `aws` | Amazon Web Services icons | AWS cloud architectures |
+| `gcp` | Google Cloud Platform icons | GCP architectures |
+| `k8s` | Kubernetes icons | Container orchestration, K8s deployments |
+| `generic` | Open-source & cloud-agnostic icons | Multi-cloud, OSS tools (Vault, Prometheus, etc.) |
 
 ### Style Selection
 
 ```bash
-# C4 Model (default) - fast, works offline
-node ai-diagram.js generate "microservices architecture" --style c4
+# Azure (default)
+node ai-diagram-v5.js generate "Azure CMK with Key Vault" --style azure
 
-# Azure Icons - requires internet for icon fetching
-node ai-diagram.js generate "Azure architecture" --style azure
+# AWS
+node ai-diagram-v5.js generate "Serverless with Lambda and DynamoDB" --style aws
 
-# AWS Icons - requires internet for icon fetching
-node ai-diagram.js generate "AWS serverless" --style aws
+# GCP
+node ai-diagram-v5.js generate "Data platform with BigQuery" --style gcp
 
-# Plain PlantUML - fast, works everywhere
-node ai-diagram.js generate "simple flowchart" --style plain
+# Kubernetes
+node ai-diagram-v5.js generate "Microservices with Ingress" --style k8s
+
+# Generic/Open-Source
+node ai-diagram-v5.js generate "Vault secrets with Prometheus monitoring" --style generic
 ```
+
+---
+
+## Quality Presets
+
+Control the level of detail in generated diagrams.
+
+| Quality | Nodes | Clusters | Description |
+|---------|-------|----------|-------------|
+| `simple` | 5-8 | 1-2 | Basic diagram, minimal detail |
+| `standard` | 8-15 | 3-5 | Balanced detail and organization |
+| `enterprise` | 15+ | 5+ | Full detail with automation, monitoring, DR |
+
+### Quality Examples
+
+```bash
+# Simple - quick overview
+node ai-diagram-v5.js generate "web app with database" --quality simple
+
+# Standard - balanced (default)
+node ai-diagram-v5.js generate "microservices architecture" --quality standard
+
+# Enterprise - comprehensive with all layers
+node ai-diagram-v5.js generate "M365 CMK encryption" --quality enterprise
+```
+
+**Enterprise quality automatically includes:**
+- Identity & Access Control layers
+- Automation (DevOps, CI/CD)
+- Monitoring & Observability
+- DR/Backup components
+- Detailed RBAC flows
+
+---
+
+## Templates
+
+Pre-built templates for common architecture patterns. Use `node ai-diagram-v5.js templates` to see all available templates.
+
+### Azure Templates
+
+| Template | Description |
+|----------|-------------|
+| `m365-cmk` | M365 Customer Managed Keys with Key Vault, DEP keys, SharePoint, Exchange, Teams |
+| `power-platform-cmk` | Power Platform CMK - Dataverse, Power Apps, Power Automate encryption |
+| `azure-landing-zone` | Enterprise-scale landing zone with management groups, hub-spoke networking |
+| `zero-trust` | Zero Trust architecture with identity, device, network, data protection |
+
+### AWS Templates
+
+| Template | Description |
+|----------|-------------|
+| `aws-serverless` | Serverless with API Gateway, Lambda, DynamoDB, Cognito |
+| `aws-eks` | Production EKS with networking, security, observability |
+
+### GCP Templates
+
+| Template | Description |
+|----------|-------------|
+| `gcp-data-platform` | Data platform with BigQuery, Dataflow, Pub/Sub |
+
+### Kubernetes Templates
+
+| Template | Description |
+|----------|-------------|
+| `k8s-microservices` | Microservices with service mesh, RBAC, observability |
+
+### Open Source Templates
+
+| Template | Description |
+|----------|-------------|
+| `oss-observability` | Prometheus, Grafana, Loki, Tempo stack |
+| `oss-cicd` | GitOps CI/CD with GitHub Actions, ArgoCD |
+| `oss-secrets` | HashiCorp Vault secrets management |
+
+### Using Templates
+
+```bash
+# Use template directly
+node ai-diagram-v5.js generate --template m365-cmk --open
+
+# Customize a template with additional requirements
+node ai-diagram-v5.js generate "Add Intune MDM" --template zero-trust --open
+
+# List all templates with descriptions
+node ai-diagram-v5.js templates
+```
+
+---
+
+## Available Icons
+
+The generator uses the [Python diagrams](https://diagrams.mingrammer.com/) library. Below are verified icons available for each style.
+
+### Azure Icons (`--style azure`)
+
+```
+Compute:        FunctionApps, AppServices, VM, AKS, ContainerInstances
+Database:       SQLDatabases, CosmosDb, BlobStorage, DataLake
+DevOps:         Devops, Repos, Pipelines, Artifacts, Boards
+Identity:       ManagedIdentities, ActiveDirectory, ConditionalAccess
+Integration:    LogicApps, ServiceBus, EventGridDomains, APIManagement
+Network:        VirtualNetworks, Firewall, LoadBalancers, ApplicationGateway, 
+                DNS, PrivateEndpoint, Subnets
+Security:       KeyVaults, SecurityCenter, Sentinel
+Storage:        StorageAccounts, BlobStorage, FileStorage, QueueStorage
+Analytics:      LogAnalyticsWorkspaces, EventHubs, Databricks, SynapseAnalytics
+General:        Subscriptions, Resourcegroups, Managementgroups
+```
+
+### AWS Icons (`--style aws`)
+
+```
+Compute:        Lambda, EC2, ECS, EKS, Fargate, ElasticBeanstalk, Batch
+Database:       RDS, Dynamodb, ElastiCache, Redshift, Aurora, Neptune
+Network:        VPC, ELB, ALB, NLB, CloudFront, Route53, APIGateway,
+                PrivateSubnet, PublicSubnet, NATGateway
+Storage:        S3, EBS, EFS, FSx, Glacier
+Security:       IAM, Cognito, KMS, SecretsManager, WAF, Shield, ACM,
+                SecurityHub, GuardDuty, Inspector
+Integration:    SQS, SNS, Eventbridge, StepFunctions, MQ
+Analytics:      Kinesis, Athena, Glue, EMR, Quicksight, LakeFormation
+Management:     Cloudwatch, Cloudtrail, Config, SystemsManager
+DevTools:       Codepipeline, Codecommit, Codebuild, Codedeploy
+```
+
+### GCP Icons (`--style gcp`)
+
+```
+Compute:        Functions, Run, GKE, ComputeEngine, AppEngine
+Database:       CloudSQL, Spanner, Firestore, Bigtable, Memorystore
+Network:        VPC, LoadBalancing, CDN, DNS, Armor, NAT, Router
+Storage:        GCS, Filestore, PersistentDisk
+Security:       Iam, KMS, SecurityCommandCenter, KeyManagementService
+Analytics:      BigQuery, Dataflow, Pubsub, Dataproc, Composer
+Operations:     Monitoring, Logging
+```
+
+### Kubernetes Icons (`--style k8s`)
+
+```
+Compute:        Pod, Deployment, ReplicaSet, StatefulSet, DaemonSet, Job, Cronjob
+Network:        Service, Ingress, NetworkPolicy
+Storage:        PV, PVC, StorageClass
+RBAC:           ServiceAccount, Role, RoleBinding, ClusterRole, ClusterRoleBinding
+Control Plane:  APIServer, Scheduler, ControllerManager
+Infrastructure: Node, Master
+Config:         HPA, LimitRange, Quota, CRD, ConfigMap, Secret, Namespace
+```
+
+### Generic/Open-Source Icons (`--style generic`)
+
+```
+Containers:     Docker, Containerd
+Orchestration:  Nomad
+Databases:      PostgreSQL, MySQL, MongoDB, Redis, Cassandra, InfluxDB, Neo4J
+Web/Proxy:      Nginx, Apache, Traefik, HAProxy, Envoy, Caddy, Gunicorn, Tomcat
+Service Mesh:   Istio, Consul, Kong, Linkerd
+Queue:          Kafka, RabbitMQ, ActiveMQ, Celery
+Monitoring:     Prometheus, Grafana, Datadog, Splunk, Nagios, Zabbix, 
+                Thanos, Cortex, Mimir, Sentry
+CI/CD:          Jenkins, GithubActions, GitlabCI, CircleCI, DroneCI, 
+                TravisCI, Teamcity
+VCS:            Git, Github, Gitlab
+Security:       Vault, Trivy, Bitwarden
+Caching:        Redis, Memcached
+Logging:        FluentBit, Loki, Graylog, RSyslog
+Tracing:        Jaeger, Tempo
+SaaS:           Teams, Slack, Cloudflare, Auth0, Okta, Pagerduty, Opsgenie
+Languages:      Python, Javascript, Go, Rust, Java, Nodejs
+Frameworks:     React, Vue, Angular, Django, Flask, Spring
+```
+
+> ⚠️ **Note:** Some icons that might seem obvious don't exist in the library. See [Troubleshooting](#icon-import-errors) for common issues.
 
 ---
 
 ## Examples
 
-### C4 Model Examples
+### M365 Customer Managed Keys (Enterprise)
 
 ```bash
-# Microservices Architecture
-node ai-diagram.js generate "Microservices architecture with API Gateway, three backend services (User Service, Order Service, Payment Service), message queue for async communication, and PostgreSQL databases for each service" --style c4 --open
-
-# E-commerce Platform
-node ai-diagram.js generate "E-commerce platform with React frontend, Node.js BFF, microservices for catalog, cart, checkout, and inventory, Redis cache, and MongoDB database" --style c4 --open
-
-# CI/CD Pipeline
-node ai-diagram.js generate "CI/CD pipeline showing GitHub repository, GitHub Actions for build and test, Docker registry, Kubernetes cluster with staging and production namespaces, and monitoring with Prometheus and Grafana" --style c4 --open
-
-# Data Pipeline
-node ai-diagram.js generate "Data pipeline with Kafka for ingestion, Spark for processing, data lake on S3, Snowflake data warehouse, and Tableau for visualization" --style c4 --open
-
-# Authentication System
-node ai-diagram.js generate "Authentication system with identity provider, OAuth 2.0 authorization server, API gateway with JWT validation, and protected microservices" --style c4 --open
+node ai-diagram-v5.js generate --template m365-cmk --open
 ```
 
-### Azure Architecture Examples
+Or with custom description:
 
 ```bash
-# Customer Managed Keys (CMK)
-node ai-diagram.js generate "Azure CMK architecture with Key Vault storing customer-managed encryption keys, Entra ID for identity, Managed Identity for passwordless auth, App Service web application, and Blob Storage with encryption at rest" --style azure --open
-
-# Hub-Spoke Network
-node ai-diagram.js generate "Azure hub-spoke network topology with central hub VNet containing Azure Firewall, VPN Gateway, and Bastion. Three spoke VNets for production, development, and shared services, all peered to hub" --style azure --open
-
-# AKS with DevOps
-node ai-diagram.js generate "Azure Kubernetes Service deployment with Azure Container Registry, Azure DevOps pipelines for CI/CD, Key Vault for secrets, Application Insights for monitoring, and Azure SQL Database backend" --style azure --open
-
-# Event-Driven Architecture
-node ai-diagram.js generate "Azure event-driven architecture with Event Hub for ingestion, Azure Functions for processing, Cosmos DB for storage, and Service Bus for reliable messaging between services" --style azure --open
-
-# M365 Security Architecture
-node ai-diagram.js generate "Microsoft 365 security architecture showing Entra ID with Conditional Access, Microsoft Purview for compliance, Defender for Cloud Apps, Sentinel for SIEM, and Log Analytics for monitoring" --style azure --open
-
-# Power Platform with Dataverse
-node ai-diagram.js generate "Power Platform solution with Power Apps canvas app, Power Automate flows, Dataverse database, Power BI dashboards, and integration with SharePoint and Teams" --style azure --open
+node ai-diagram-v5.js generate "M365 CMK architecture showing Key Vault with HSM-protected root keys wrapping DEP keys for SharePoint, Exchange and Teams. Include Entra ID authentication, RBAC permissions, geo-replication to DR vault, DevOps automation for key deployment, and Log Analytics for audit monitoring" --style azure --quality enterprise --open
 ```
 
-### AWS Architecture Examples
+### Kubernetes Microservices with Service Mesh
 
 ```bash
-# Serverless Web Application
-node ai-diagram.js generate "AWS serverless web application with CloudFront CDN, S3 for static hosting, API Gateway, Lambda functions, DynamoDB database, and Cognito for authentication" --style aws --open
-
-# Three-Tier Architecture
-node ai-diagram.js generate "AWS three-tier architecture with Application Load Balancer, EC2 Auto Scaling group in private subnets, RDS Multi-AZ PostgreSQL, ElastiCache Redis, and NAT Gateway for outbound traffic" --style aws --open
-
-# Data Lake Architecture
-node ai-diagram.js generate "AWS data lake with S3 raw/curated/published zones, Glue for ETL, Athena for queries, Lake Formation for governance, and QuickSight for visualization" --style aws --open
-
-# Container Platform
-node ai-diagram.js generate "AWS container platform with EKS cluster, ECR for images, Application Load Balancer with Ingress, EFS for persistent storage, and CloudWatch Container Insights" --style aws --open
-
-# Event-Driven Microservices
-node ai-diagram.js generate "AWS event-driven microservices with EventBridge for events, SQS queues, Lambda functions, Step Functions for orchestration, and X-Ray for tracing" --style aws --open
+node ai-diagram-v5.js generate --template k8s-microservices --open
 ```
 
-### Plain PlantUML Examples
+Or custom:
 
 ```bash
-# Simple Flowchart
-node ai-diagram.js generate "User registration flowchart: user enters email, system validates, if valid send confirmation email and create account, if invalid show error" --style plain --open
+node ai-diagram-v5.js generate "Kubernetes microservices with Istio service mesh, secrets in HashiCorp Vault, observability with Prometheus and Grafana, and GitOps deployment with ArgoCD" --style generic --quality enterprise --open
+```
 
-# System Components
-node ai-diagram.js generate "System components showing web server, application server, cache layer, primary database, and read replica with connections between them" --style plain --open
+### AWS Serverless
 
-# Sequence Diagram Style
-node ai-diagram.js generate "Login flow between user, browser, auth service, and database showing the request/response sequence" --style plain --open
+```bash
+node ai-diagram-v5.js generate --template aws-serverless --open
+```
+
+### Simple Web Application
+
+```bash
+node ai-diagram-v5.js generate "React frontend, Node.js API, PostgreSQL database" --quality simple --open
+```
+
+### Azure Hub-Spoke Network
+
+```bash
+node ai-diagram-v5.js generate "Azure hub-spoke network with central firewall, VPN gateway, and three spoke VNets for prod, dev, and shared services" --style azure --quality standard --open
+```
+
+### Open Source Observability Stack
+
+```bash
+node ai-diagram-v5.js generate --template oss-observability --open
 ```
 
 ---
@@ -433,7 +530,7 @@ node ai-diagram.js generate "Login flow between user, browser, auth service, and
 Saves diagrams to the `./output` directory (configurable via `LOCAL_OUTPUT_DIR`).
 
 ```bash
-node ai-diagram.js publish --target local
+node ai-diagram-v5.js publish --target local
 ```
 
 ### GitHub Publishing
@@ -442,13 +539,15 @@ Pushes diagrams to a GitHub repository.
 
 ```bash
 # Ensure GITHUB_* variables are set in .env
-node ai-diagram.js publish --target github
+node ai-diagram-v5.js publish --target github
 ```
 
 **Output:**
 ```
 ✓ Pushed to GitHub
-![Azure CMK Architecture](https://raw.githubusercontent.com/your-user/your-repo/main/images/azure_cmk_architecture.png)
+
+MARKDOWN REFERENCE:
+![M365 CMK Architecture](https://raw.githubusercontent.com/your-user/your-repo/main/images/m365_cmk_architecture.png)
 ```
 
 ### Azure DevOps Publishing
@@ -457,13 +556,13 @@ Pushes diagrams to an Azure DevOps Git repository.
 
 ```bash
 # Ensure AZDO_* variables are set in .env
-node ai-diagram.js publish --target devops
+node ai-diagram-v5.js publish --target devops
 ```
 
 ### Publish to All Targets
 
 ```bash
-node ai-diagram.js publish --target all --clean
+node ai-diagram-v5.js publish --target all --clean
 ```
 
 The `--clean` flag removes temp files after successful publishing.
@@ -472,202 +571,192 @@ The `--clean` flag removes temp files after successful publishing.
 
 ## Using Images in Markdown
 
-After publishing your diagrams, you can reference them in your documentation.
+After publishing, reference your diagrams in documentation:
 
 ### GitHub Repository Images
 
-For images pushed to GitHub, use the raw URL format:
-
 ```markdown
-# In your README.md or documentation
-
-## Architecture Overview
-
-![CMK Architecture](https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/images/azure_cmk_architecture.png)
-
-## System Components
-
-The following diagram shows our microservices architecture:
-
-![Microservices](https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/images/microservices_architecture.png)
-```
-
-**URL Format:**
-```
-https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{folder}/{filename}.png
-```
-
-**Example:**
-```markdown
-![My Diagram](https://raw.githubusercontent.com/cloudstrucc/programmatic-diagram-generator/main/images/cmk_architecture.png)
+![CMK Architecture](https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/images/m365_cmk_architecture.png)
 ```
 
 ### Azure DevOps Repository Images
-
-For images in Azure DevOps, use the raw file URL:
 
 ```markdown
 ![Architecture](https://dev.azure.com/{org}/{project}/_apis/git/repositories/{repo}/items?path=/images/architecture.png&api-version=6.0)
 ```
 
-**Alternative - Using relative paths** (if markdown is in the same repo):
+### Relative Paths (Same Repo)
 
 ```markdown
 ![Architecture](./images/architecture.png)
-```
-
-### Wiki Integration
-
-#### GitHub Wiki
-
-```markdown
-<!-- Reference from same repo -->
-![Diagram](../blob/main/images/diagram.png)
-
-<!-- Or use raw URL -->
-![Diagram](https://raw.githubusercontent.com/owner/repo/main/images/diagram.png)
-```
-
-#### Azure DevOps Wiki
-
-```markdown
-<!-- Relative to wiki root -->
-![Diagram](/images/diagram.png)
-
-<!-- From Git repo -->
-![Diagram](/.attachments/diagram.png)
-```
-
-### Confluence / SharePoint
-
-For Confluence or SharePoint, download the image and upload it directly, or use the raw GitHub URL if external images are allowed.
-
-### Example Documentation Structure
-
-```
-your-project/
-├── README.md
-├── docs/
-│   ├── architecture/
-│   │   ├── overview.md
-│   │   ├── security.md
-│   │   └── deployment.md
-│   └── images/           # Local copies for offline viewing
-│       ├── architecture.png
-│       └── security.png
-└── images/               # Published to GitHub
-    ├── cmk_architecture.png
-    ├── m365_security.png
-    └── teams_premium.png
-```
-
-**docs/architecture/overview.md:**
-```markdown
-# Architecture Overview
-
-## High-Level Design
-
-Our platform uses a microservices architecture deployed on Azure Kubernetes Service.
-
-![Architecture Overview](https://raw.githubusercontent.com/myorg/myrepo/main/images/architecture_overview.png)
-
-## Security Architecture
-
-Customer-managed keys provide encryption for all data at rest.
-
-![CMK Architecture](https://raw.githubusercontent.com/myorg/myrepo/main/images/cmk_architecture.png)
-
-## Key Components
-
-| Component | Purpose |
-|-----------|---------|
-| Key Vault | Stores CMK keys with HSM protection |
-| Managed Identity | Passwordless authentication |
-| App Service | Web application hosting |
 ```
 
 ---
 
 ## Troubleshooting
 
-### Common Issues
+### Graphviz Not Found
 
-#### "Kroki API error: 400 Bad Request"
-
-**Cause:** Usually means PlantUML syntax error or missing includes.
-
-**Solution:**
-1. Check the PlantUML output in verbose mode: `--verbose`
-2. For Azure/AWS styles, ensure Docker services are running with `ALLOW_PLANTUML_INCLUDE=true`
-3. Try a simpler description or use `--style c4`
-
-#### "Cannot include <azure/...>" Error
-
-**Cause:** Kroki/PlantUML doesn't have the Azure stdlib or remote includes are disabled.
-
-**Solution:**
-1. Ensure `docker-compose.yml` has `KROKI_SAFE_MODE=unsafe`
-2. Restart Docker services: `docker-compose down && docker-compose up -d`
-3. Or use `--style c4` which doesn't require external includes
-
-#### Port 8000 Already in Use
-
-**Solution:**
-```bash
-# Find what's using the port
-lsof -i :8000
-
-# Kill the process
-kill -9 <PID>
-
-# Or change port in docker-compose.yml and .env
+**Error:**
+```
+graphviz.backend.execute.ExecutableNotFound: failed to execute PosixPath('dot')
 ```
 
-#### "ANTHROPIC_API_KEY not set"
+**Solution:**
+Install Graphviz for your operating system:
+
+```bash
+# macOS
+brew install graphviz
+
+# Ubuntu/Debian
+sudo apt-get install graphviz
+
+# Windows
+choco install graphviz
+
+# Verify installation
+dot -V
+```
+
+### Icon Import Errors
+
+**Error:**
+```
+ImportError: cannot import name 'Fluentd' from 'diagrams.onprem.logging'
+```
+
+**Cause:** Claude generated code using an icon that doesn't exist in the `diagrams` library.
+
+**Common non-existent icons and alternatives:**
+
+| ❌ Doesn't Exist | ✅ Use Instead |
+|-----------------|----------------|
+| `Fluentd` | `FluentBit` |
+| `Tekton` | `GithubActions` or `Jenkins` |
+| `Podman` | `Docker` or `Containerd` |
+| `Gitea` | `Github` or `Gitlab` |
+| `Kubelet` | `Rack` (generic) |
+| `CronJob` | `Cronjob` (lowercase j) |
+| `HPA` in `k8s.others` | `HPA` in `k8s.clusterconfig` |
 
 **Solution:**
-1. Ensure `.env` file exists in project root
+1. Edit the generated Python file in `.temp-ai-diagrams/diagram.py`
+2. Replace the invalid import with a valid alternative
+3. Run `node ai-diagram-v5.js regenerate --open`
+
+### Python Syntax Errors
+
+**Error:**
+```
+SyntaxError: EOL while scanning string literal
+```
+
+**Cause:** Multi-line strings with literal newlines instead of `\n` escape sequences.
+
+**Solution:** This is automatically fixed in v5. If you see this error, ensure you're using the latest version of the script.
+
+### ANTHROPIC_API_KEY Not Set
+
+**Error:**
+```
+Error: ANTHROPIC_API_KEY not set in .env file
+```
+
+**Solution:**
+1. Ensure `.env` file exists in the project root
 2. Check the key is correctly formatted: `ANTHROPIC_API_KEY=sk-ant-...`
 3. Restart your terminal after editing `.env`
 
-#### Docker Services Not Starting
+### Diagram Not Opening
+
+**Error:** `--open` flag doesn't work
 
 **Solution:**
 ```bash
-# Check Docker is running
-docker info
-
-# View service logs
-docker-compose logs kroki
-docker-compose logs plantuml
-
-# Rebuild containers
-docker-compose down
-docker-compose pull
-docker-compose up -d
+# Manually open the generated image
+open .temp-ai-diagrams/diagram.png        # macOS
+xdg-open .temp-ai-diagrams/diagram.png    # Linux
+start .temp-ai-diagrams/diagram.png       # Windows
 ```
 
-#### Slow Diagram Generation
+### Python Not Found
 
-**Cause:** Network latency for Azure/AWS icons fetched from GitHub.
+**Error:**
+```
+Error: Failed to start Python: spawn python3 ENOENT
+```
 
 **Solution:**
-1. Use `--style c4` for faster local rendering
-2. Ensure local Docker services are running (avoids plantuml.com)
-3. Consider caching frequently used diagrams
+```bash
+# Check Python is installed
+python3 --version
 
-### Getting Help
+# If not installed:
+# macOS
+brew install python
 
-1. Run with `--verbose` flag for detailed output
-2. Check `docker-compose logs` for service errors
-3. Verify your `.env` configuration
-4. Test with a simple diagram: `node ai-diagram.js generate "simple box diagram" --style plain`
+# Ubuntu/Debian
+sudo apt-get install python3
 
----
+# Ensure diagrams is installed
+pip3 install diagrams
+```
 
-## License
+### Diagram Quality Issues
 
-MIT License - see [LICENSE](LICENSE) for details.
+**Problem:** Generated diagram is too simple or missing components.
+
+**Solution:**
+1. Use `--quality enterprise` for comprehensive diagrams
+2. Be more specific in your description
+3. Use a template as a starting point: `--template m365-cmk`
+4. Add specific requirements: "Include monitoring, automation, and DR components"
+
+### GitHub/DevOps Push Fails
+
+**Error:**
+```
+Error: GitHub configuration missing
+```
+
+**Solution:**
+1. Verify all required environment variables are set in `.env`
+2. Check token has correct permissions (`repo` scope for GitHub)
+3. Ensure repository exists and is accessible
+
+### Viewing Generated Python Code
+
+To debug or understand what's being generated:
+
+```bash
+# Show the Python code without regenerating
+node ai-diagram-v5.js preview --code
+
+# Generate with verbose output
+node ai-diagram-v5.js generate "your description" --verbose
+
+# View the file directly
+cat .temp-ai-diagrams/diagram.py
+```
+
+### Manual Diagram Editing
+
+You can manually edit the generated Python code:
+
+```bash
+# 1. Generate initial diagram
+node ai-diagram-v5.js generate "your architecture" --style azure
+
+# 2. Edit the Python file
+code .temp-ai-diagrams/diagram.py
+
+# 3. Regenerate the image
+node ai-diagram-v5.js regenerate --open
+
+# 4. Publish when satisfied
+node ai-diagram-v5.js publish --target local
+```
 
 ---
 
@@ -678,13 +767,42 @@ MIT License - see [LICENSE](LICENSE) for details.
 3. Make your changes
 4. Submit a pull request
 
+### Adding New Templates
+
+Templates are defined in the `TEMPLATES` object in `ai-diagram-v5.js`. Each template includes:
+
+```javascript
+'template-name': {
+  name: 'Human Readable Name',
+  description: 'Brief description',
+  style: 'azure',  // azure, aws, gcp, k8s, generic
+  quality: 'enterprise',  // simple, standard, enterprise
+  prompt: `Detailed prompt describing the architecture...`,
+}
+```
+
+### Verifying Icons
+
+Before adding new icons to the styles, verify they exist:
+
+```bash
+python3 -c "
+from diagrams.onprem import logging
+print([x for x in dir(logging) if not x.startswith('_')])
+"
+```
+
+---
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
 ---
 
 ## Acknowledgments
 
 - [Anthropic Claude](https://www.anthropic.com/) - AI diagram generation
-- [PlantUML](https://plantuml.com/) - Diagram rendering
-- [Kroki](https://kroki.io/) - Unified diagram API
-- [Azure-PlantUML](https://github.com/plantuml-stdlib/Azure-PlantUML) - Azure icons
-- [AWS-PlantUML](https://github.com/awslabs/aws-icons-for-plantuml) - AWS icons
-- [C4-PlantUML](https://github.com/plantuml-stdlib/C4-PlantUML) - C4 model support
+- [Python Diagrams](https://diagrams.mingrammer.com/) - Diagram rendering library
+- [Graphviz](https://graphviz.org/) - Graph visualization
+- Azure, AWS, GCP icon sets included in the diagrams library
