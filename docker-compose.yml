@@ -1,0 +1,16 @@
+version: "3"
+services:
+  kroki:
+    image: yuzutech/kroki
+    depends_on:
+      - plantuml
+    environment:
+      - KROKI_PLANTUML_HOST=plantuml
+    ports:
+      - "8000:8000"
+
+  plantuml:
+    image: plantuml/plantuml-server:jetty
+    environment:
+      - PLANTUML_LIMIT_SIZE=8192
+      - ALLOW_PLANTUML_INCLUDE=true
