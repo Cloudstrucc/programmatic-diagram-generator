@@ -175,12 +175,12 @@ Generate professional C4 architecture diagrams.`,
   },
 
   /**
-   * Azure Icons - Requires kroki.io (public) for full stdlib
+   * Azure Icons - Uses PlantUML server (supports remote includes)
    */
   azure: {
     name: 'Azure Icons',
-    krokiUrl: 'public', // Use public kroki.io
-    systemPrompt: `You are an expert Azure architect. Generate PlantUML diagrams using Azure icons from the PlantUML stdlib.
+    krokiUrl: 'plantuml', // Use PlantUML server for remote includes
+    systemPrompt: `You are an expert Azure architect. Generate PlantUML diagrams using Azure-PlantUML icons.
 
 You MUST respond with valid JSON in this exact format (no markdown code blocks):
 {
@@ -190,36 +190,41 @@ You MUST respond with valid JSON in this exact format (no markdown code blocks):
   "puml": "<plantuml code here>"
 }
 
-AZURE ICONS - Use stdlib syntax with angle brackets:
+AZURE ICONS - Use !define and !includeurl with GitHub raw URLs:
 
-!include <azure/AzureCommon>
-!include <azure/Security/KeyVault>
-!include <azure/Identity/AzureActiveDirectory>
-!include <azure/Identity/ManagedIdentity>
-!include <azure/Management/LogAnalyticsWorkspaces>
-!include <azure/DevOps/AzureDevOps>
-!include <azure/DevOps/AzurePipelines>
-!include <azure/Compute/FunctionApps>
-!include <azure/Storage/StorageAccounts>
-!include <azure/Storage/BlobStorage>
-!include <azure/Databases/AzureCosmosDb>
-!include <azure/Databases/SQLDatabase>
-!include <azure/Integration/LogicApps>
-!include <azure/Security/AzureSentinel>
-!include <azure/Web/AppServices>
+First, define the base URL and include AzureCommon:
+!define AzurePuml https://raw.githubusercontent.com/plantuml-stdlib/Azure-PlantUML/release/2-2/dist
+!includeurl AzurePuml/AzureCommon.puml
 
-MACRO SYNTAX (use the icon name as the macro):
-KeyVault(alias, "Label", "Description")
-AzureActiveDirectory(alias, "Label", "Description")
-ManagedIdentity(alias, "Label", "Description") 
-StorageAccounts(alias, "Label", "Description")
-BlobStorage(alias, "Label", "Description")
-FunctionApps(alias, "Label", "Description")
-AppServices(alias, "Label", "Description")
-SQLDatabase(alias, "Label", "Description")
-AzureCosmosDb(alias, "Label", "Description")
-AzureSentinel(alias, "Label", "Description")
-LogAnalyticsWorkspaces(alias, "Label", "Description")
+Then include specific services:
+!includeurl AzurePuml/Security/AzureKeyVault.puml
+!includeurl AzurePuml/Identity/AzureActiveDirectory.puml
+!includeurl AzurePuml/Identity/AzureManagedIdentity.puml
+!includeurl AzurePuml/Management/AzureLogAnalytics.puml
+!includeurl AzurePuml/DevOps/AzureDevOps.puml
+!includeurl AzurePuml/DevOps/AzurePipelines.puml
+!includeurl AzurePuml/Compute/AzureFunction.puml
+!includeurl AzurePuml/Storage/AzureBlobStorage.puml
+!includeurl AzurePuml/Storage/AzureStorage.puml
+!includeurl AzurePuml/Databases/AzureCosmosDb.puml
+!includeurl AzurePuml/Databases/AzureSqlDatabase.puml
+!includeurl AzurePuml/Integration/AzureLogicApps.puml
+!includeurl AzurePuml/Security/AzureSentinel.puml
+!includeurl AzurePuml/Web/AzureAppService.puml
+
+MACRO SYNTAX (3 or 4 parameters):
+AzureKeyVault(alias, "Label", "Technology")
+AzureKeyVault(alias, "Label", "Technology", "Description")
+AzureActiveDirectory(alias, "Label", "Technology")
+AzureManagedIdentity(alias, "Label", "Technology")
+AzureLogAnalytics(alias, "Label", "Technology")
+AzureFunction(alias, "Label", "Technology")
+AzureBlobStorage(alias, "Label", "Technology")
+AzureCosmosDb(alias, "Label", "Technology")
+AzureSqlDatabase(alias, "Label", "Technology")
+AzureLogicApps(alias, "Label", "Technology")
+AzureSentinel(alias, "Label", "Technology")
+AzureAppService(alias, "Label", "Technology")
 
 CONNECTIONS:
 alias1 --> alias2 : label
@@ -230,7 +235,7 @@ alias1 -[#800080,dashed]-> alias2 : purple dashed (auth)
 
 GROUPING:
 rectangle "Group Name" {
-  KeyVault(kv, "Key Vault", "Stores keys")
+  AzureKeyVault(kv, "Key Vault", "HSM")
 }
 
 NOTES:
@@ -246,16 +251,17 @@ WORKING EXAMPLE:
   "title": "Azure CMK Architecture",
   "description": "Customer managed keys with Key Vault",
   "puml": "@startuml
-!include <azure/AzureCommon>
-!include <azure/Security/KeyVault>
-!include <azure/Identity/AzureActiveDirectory>
-!include <azure/Web/AppServices>
+!define AzurePuml https://raw.githubusercontent.com/plantuml-stdlib/Azure-PlantUML/release/2-2/dist
+!includeurl AzurePuml/AzureCommon.puml
+!includeurl AzurePuml/Security/AzureKeyVault.puml
+!includeurl AzurePuml/Identity/AzureActiveDirectory.puml
+!includeurl AzurePuml/Web/AzureAppService.puml
 
 title Azure CMK Architecture
 
-AzureActiveDirectory(aad, \\"Entra ID\\", \\"Identity\\")
-KeyVault(kv, \\"Key Vault\\", \\"CMK Storage\\")
-AppServices(app, \\"App Service\\", \\"Web App\\")
+AzureActiveDirectory(aad, \\"Entra ID\\", \\"Identity Provider\\")
+AzureKeyVault(kv, \\"Key Vault\\", \\"CMK Storage\\")
+AzureAppService(app, \\"App Service\\", \\"Web App\\")
 
 aad --> kv : RBAC
 app --> kv : get keys
@@ -263,16 +269,17 @@ app --> kv : get keys
 @enduml"
 }
 
-Generate professional Azure architecture diagrams. Only include icons you actually use.`,
+IMPORTANT: Always use !define and !includeurl - do NOT use !include with angle brackets.
+Generate professional Azure architecture diagrams. Only include the specific .puml files you use.`,
   },
 
   /**
-   * AWS Icons - Requires kroki.io (public) for full stdlib
+   * AWS Icons - Uses PlantUML server (supports remote includes)
    */
   aws: {
     name: 'AWS Icons',
-    krokiUrl: 'public',
-    systemPrompt: `You are an expert AWS architect. Generate PlantUML diagrams using AWS icons from the PlantUML stdlib.
+    krokiUrl: 'plantuml', // Use PlantUML server for remote includes
+    systemPrompt: `You are an expert AWS architect. Generate PlantUML diagrams using AWS-PlantUML icons.
 
 You MUST respond with valid JSON in this exact format (no markdown code blocks):
 {
@@ -282,35 +289,65 @@ You MUST respond with valid JSON in this exact format (no markdown code blocks):
   "puml": "<plantuml code here>"
 }
 
-AWS ICONS - Use stdlib syntax:
+AWS ICONS - Use !define and !includeurl with GitHub raw URLs:
 
-!include <awslib/AWSCommon>
-!include <awslib/SecurityIdentityCompliance/KeyManagementService>
-!include <awslib/SecurityIdentityCompliance/IAMIdentityCenter>
-!include <awslib/Database/RDS>
-!include <awslib/Database/DynamoDB>
-!include <awslib/Compute/Lambda>
-!include <awslib/Compute/EC2>
-!include <awslib/Storage/SimpleStorageService>
-!include <awslib/Storage/ElasticBlockStore>
-!include <awslib/Containers/ElasticKubernetesService>
-!include <awslib/NetworkingContentDelivery/VPC>
-!include <awslib/NetworkingContentDelivery/CloudFront>
-!include <awslib/ApplicationIntegration/APIGateway>
+First, define the base URL and include AWSCommon:
+!define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v18.0/dist
+!includeurl AWSPuml/AWSCommon.puml
+
+Then include specific services:
+!includeurl AWSPuml/SecurityIdentityCompliance/KeyManagementService.puml
+!includeurl AWSPuml/SecurityIdentityCompliance/IAMIdentityCenter.puml
+!includeurl AWSPuml/SecurityIdentityCompliance/IdentityandAccessManagement.puml
+!includeurl AWSPuml/Database/RDS.puml
+!includeurl AWSPuml/Database/DynamoDB.puml
+!includeurl AWSPuml/Compute/Lambda.puml
+!includeurl AWSPuml/Compute/EC2.puml
+!includeurl AWSPuml/Storage/SimpleStorageService.puml
+!includeurl AWSPuml/Storage/ElasticBlockStore.puml
+!includeurl AWSPuml/Containers/ElasticKubernetesService.puml
+!includeurl AWSPuml/NetworkingContentDelivery/VPC.puml
+!includeurl AWSPuml/NetworkingContentDelivery/CloudFront.puml
+!includeurl AWSPuml/ApplicationIntegration/APIGateway.puml
 
 MACRO SYNTAX:
-KeyManagementService(alias, "Label", "Description")
-IAMIdentityCenter(alias, "Label", "Description")
-RDS(alias, "Label", "Description")
-DynamoDB(alias, "Label", "Description")
-Lambda(alias, "Label", "Description")
-EC2(alias, "Label", "Description")
-SimpleStorageService(alias, "Label", "Description")
-ElasticKubernetesService(alias, "Label", "Description")
-VPC(alias, "Label", "Description")
-CloudFront(alias, "Label", "Description")
-APIGateway(alias, "Label", "Description")
+KeyManagementService(alias, "Label", "Technology")
+IAMIdentityCenter(alias, "Label", "Technology")
+RDS(alias, "Label", "Technology")
+DynamoDB(alias, "Label", "Technology")
+Lambda(alias, "Label", "Technology")
+EC2(alias, "Label", "Technology")
+SimpleStorageService(alias, "Label", "Technology")
+ElasticKubernetesService(alias, "Label", "Technology")
+VPC(alias, "Label", "Technology")
+CloudFront(alias, "Label", "Technology")
+APIGateway(alias, "Label", "Technology")
 
+WORKING EXAMPLE:
+{
+  "name": "aws_serverless",
+  "title": "AWS Serverless Architecture",
+  "description": "Serverless architecture with Lambda and DynamoDB",
+  "puml": "@startuml
+!define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v18.0/dist
+!includeurl AWSPuml/AWSCommon.puml
+!includeurl AWSPuml/ApplicationIntegration/APIGateway.puml
+!includeurl AWSPuml/Compute/Lambda.puml
+!includeurl AWSPuml/Database/DynamoDB.puml
+
+title AWS Serverless Architecture
+
+APIGateway(api, \\"API Gateway\\", \\"REST API\\")
+Lambda(fn, \\"Lambda\\", \\"Node.js\\")
+DynamoDB(db, \\"DynamoDB\\", \\"NoSQL\\")
+
+api --> fn : invoke
+fn --> db : read/write
+
+@enduml"
+}
+
+IMPORTANT: Always use !define and !includeurl - do NOT use !include with angle brackets.
 Generate professional AWS architecture diagrams.`,
   },
 
@@ -618,10 +655,14 @@ function encodePlantUML(puml) {
 }
 
 /**
- * Get Kroki URL based on diagram style
+ * Get Kroki/PlantUML URL based on diagram style
  */
 function getKrokiUrl(style) {
   const styleConfig = DIAGRAM_STYLES[style];
+  if (styleConfig && styleConfig.krokiUrl === 'plantuml') {
+    // Use PlantUML server for styles that need remote includes
+    return 'http://www.plantuml.com/plantuml';
+  }
   if (styleConfig && styleConfig.krokiUrl === 'public') {
     return config.kroki.publicUrl;
   }
@@ -629,9 +670,17 @@ function getKrokiUrl(style) {
 }
 
 /**
- * Render diagram via Kroki API
+ * Render diagram via Kroki or PlantUML API
  */
 async function renderDiagram(puml, style, verbose = false) {
+  const styleConfig = DIAGRAM_STYLES[style];
+  
+  // Use PlantUML server for styles that need remote includes
+  if (styleConfig && styleConfig.krokiUrl === 'plantuml') {
+    return await renderWithPlantUMLServer(puml, verbose);
+  }
+  
+  // Use Kroki for other styles
   const encoded = encodePlantUML(puml);
   const krokiUrl = getKrokiUrl(style);
   const url = `${krokiUrl}/plantuml/png/${encoded}`;
@@ -663,6 +712,82 @@ async function renderDiagram(puml, style, verbose = false) {
   }
 
   return Buffer.from(await response.arrayBuffer());
+}
+
+/**
+ * Render diagram via PlantUML server (supports remote includes)
+ */
+async function renderWithPlantUMLServer(puml, verbose = false) {
+  // PlantUML server uses different encoding than Kroki
+  const encoded = encodePlantUMLForServer(puml);
+  const url = `http://www.plantuml.com/plantuml/png/${encoded}`;
+
+  if (verbose) {
+    console.log(`\n🔗 Using PlantUML Server: http://www.plantuml.com/plantuml`);
+    console.log(`   URL length: ${url.length} chars`);
+  }
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('\n❌ PlantUML Server Error:');
+    console.error('─'.repeat(60));
+    console.error(errorText);
+    console.error('─'.repeat(60));
+    console.error('\n📝 PlantUML that caused the error:');
+    console.error('─'.repeat(60));
+    console.error(puml);
+    console.error('─'.repeat(60));
+    
+    throw new Error(`PlantUML Server error: ${response.status} ${response.statusText}`);
+  }
+
+  return Buffer.from(await response.arrayBuffer());
+}
+
+/**
+ * Encode PlantUML for PlantUML server (uses deflate + custom base64)
+ */
+function encodePlantUMLForServer(puml) {
+  const data = Buffer.from(puml, 'utf8');
+  const compressed = pako.deflate(data, { level: 9, raw: true });
+  
+  // PlantUML server uses a custom base64 encoding
+  const encode64 = (data) => {
+    let r = '';
+    for (let i = 0; i < data.length; i += 3) {
+      if (i + 2 === data.length) {
+        r += append3bytes(data[i], data[i + 1], 0);
+      } else if (i + 1 === data.length) {
+        r += append3bytes(data[i], 0, 0);
+      } else {
+        r += append3bytes(data[i], data[i + 1], data[i + 2]);
+      }
+    }
+    return r;
+  };
+
+  const encode6bit = (b) => {
+    if (b < 10) return String.fromCharCode(48 + b);
+    b -= 10;
+    if (b < 26) return String.fromCharCode(65 + b);
+    b -= 26;
+    if (b < 26) return String.fromCharCode(97 + b);
+    b -= 26;
+    if (b === 0) return '-';
+    if (b === 1) return '_';
+    return '?';
+  };
+
+  const append3bytes = (b1, b2, b3) => {
+    const c1 = b1 >> 2;
+    const c2 = ((b1 & 0x3) << 4) | (b2 >> 4);
+    const c3 = ((b2 & 0xF) << 2) | (b3 >> 6);
+    const c4 = b3 & 0x3F;
+    return encode6bit(c1) + encode6bit(c2) + encode6bit(c3) + encode6bit(c4);
+  };
+
+  return encode64(compressed);
 }
 
 // =============================================================================
