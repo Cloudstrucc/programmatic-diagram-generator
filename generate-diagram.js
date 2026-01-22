@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Azure Architecture Diagram Generator v2.0
+ * Azure Architecture Diagram Generator v2.1
  * 
  * Generates architecture diagrams using Kroki API and publishes to:
  * - Local filesystem
@@ -38,6 +38,7 @@ const __dirname = path.dirname(__filename);
 
 const config = {
   kroki: {
+    // Default to localhost if running Docker, otherwise use hosted
     url: process.env.KROKI_URL || 'https://kroki.io',
   },
   github: {
@@ -66,7 +67,7 @@ const config = {
 };
 
 // =============================================================================
-// DIAGRAM DEFINITIONS
+// DIAGRAM DEFINITIONS - Using C4-PlantUML (bundled with Kroki)
 // =============================================================================
 
 const diagrams = {
@@ -76,106 +77,91 @@ const diagrams = {
   cmk: {
     name: 'cmk_architecture',
     title: 'M365 & Power Platform - Customer Managed Keys',
-    puml: `
-@startuml CMK_Architecture
-!define AzurePuml https://raw.githubusercontent.com/plantuml-stdlib/Azure-PlantUML/master/dist
-!include AzurePuml/AzureCommon.puml
-!include AzurePuml/Security/AzureKeyVault.puml
-!include AzurePuml/Identity/AzureActiveDirectory.puml
-!include AzurePuml/Identity/AzureManagedIdentity.puml
-!include AzurePuml/Analytics/AzureLogAnalyticsWorkspace.puml
-!include AzurePuml/DevOps/AzureDevOps.puml
-!include AzurePuml/Databases/AzureCosmosDb.puml
-!include AzurePuml/Storage/AzureBlobStorage.puml
-!include AzurePuml/Compute/AzureFunction.puml
-!include AzurePuml/Integration/AzureLogicApps.puml
+    puml: `@startuml CMK_Architecture
+!include <C4/C4_Container>
 
 title M365 & Power Platform - Customer Managed Keys (CMK)\\nComplete Encryption Architecture
 
-skinparam linetype ortho
 skinparam backgroundColor white
-skinparam defaultFontSize 11
+skinparam handwritten false
 
-' Key Vault Primary
-rectangle "Azure Key Vault (Canada Central)" as kv_region #ffebee {
-  rectangle "Root Keys" as root_keys {
-    AzureKeyVault(root_key, "Customer Root Key\\n(RSA 4096)", "HSM-Protected")
-    AzureKeyVault(root_key_pp, "Power Platform\\nRoot Key", "HSM-Protected")
+rectangle "Azure Key Vault\\n(Canada Central)" as kv_region <<boundary>> #ffebee {
+  
+  rectangle "Root Keys" as root_section {
+    storage "Customer Root Key\\n(RSA 4096)\\nHSM-Protected" as root_key #ff8a80
+    storage "Power Platform\\nRoot Key\\nHSM-Protected" as root_key_pp #ff8a80
   }
   
-  rectangle "M365 DEP Keys" as dep_keys {
-    AzureKeyVault(dep_spo, "DEP Key\\nSharePoint", "")
-    AzureKeyVault(dep_exo, "DEP Key\\nExchange", "")
-    AzureKeyVault(dep_teams, "DEP Key\\nTeams", "")
+  rectangle "M365 DEP Keys" as m365_keys {
+    storage "DEP Key\\nSharePoint" as dep_spo #ffcdd2
+    storage "DEP Key\\nExchange" as dep_exo #ffcdd2
+    storage "DEP Key\\nTeams" as dep_teams #ffcdd2
   }
   
   rectangle "Power Platform Keys" as pp_keys {
-    AzureKeyVault(dep_dataverse, "Dataverse\\nEncryption Key", "")
-    AzureKeyVault(dep_copilot, "Copilot Studio\\nKey", "")
+    storage "Dataverse\\nEncryption Key" as dep_dataverse #ffcdd2
+    storage "Copilot Studio\\nKey" as dep_copilot #ffcdd2
   }
 }
 
-' Key Vault DR
-rectangle "DR Key Vault (Canada East)" as kv_dr_region #fff8e1 {
-  AzureKeyVault(kv_dr, "Geo-Replica\\nKey Vault", "Auto-Replicated")
+rectangle "DR Key Vault\\n(Canada East)" as kv_dr_region <<boundary>> #fff8e1 {
+  storage "Geo-Replica\\nKey Vault" as kv_dr #ffe082
 }
 
-' Microsoft 365
-rectangle "Microsoft 365 Workloads" as m365 #e3f2fd {
-  rectangle "SharePoint Online" as spo_cluster {
-    AzureBlobStorage(spo, "SPO Sites &\\nDocument Libraries", "")
-    storage "Office Files\\n(Word, Excel, PPT)" as spo_office
-    storage "PDF Files" as spo_pdf
+rectangle "Microsoft 365 Workloads" as m365_region <<boundary>> #e3f2fd {
+  
+  rectangle "SharePoint Online" as spo_section {
+    database "SPO Sites &\\nDocument Libraries" as spo #90caf9
+    file "Office Files\\n(Word, Excel, PPT)" as spo_office #bbdefb
+    file "PDF Files" as spo_pdf #bbdefb
   }
   
-  rectangle "Exchange Online" as exo_cluster {
-    AzureBlobStorage(exo, "Mailboxes &\\nAttachments", "")
+  rectangle "Exchange Online" as exo_section {
+    database "Mailboxes &\\nAttachments" as exo #90caf9
   }
   
-  rectangle "Teams" as teams_cluster {
-    AzureBlobStorage(teams, "Chats, Channels,\\nRecordings", "")
+  rectangle "Teams" as teams_section {
+    database "Chats, Channels,\\nRecordings" as teams #90caf9
   }
   
-  rectangle "OneDrive" as odb_cluster {
-    AzureBlobStorage(odb, "OneDrive Files", "")
-  }
-}
-
-' Power Platform
-rectangle "Power Platform (Protected B)" as powerplat #e8f5e9 {
-  rectangle "Dataverse" as dv_cluster {
-    AzureCosmosDb(dataverse, "Dataverse Tables", "")
-    AzureBlobStorage(dv_files, "File & Image\\nColumns", "")
-  }
-  
-  rectangle "Power Apps" as pa_cluster {
-    AzureFunction(powerapps, "Canvas &\\nModel Apps", "")
-  }
-  
-  rectangle "Power Automate" as pflow_cluster {
-    AzureLogicApps(powerauto, "Cloud Flows", "")
-  }
-  
-  rectangle "Power Pages" as pp_cluster {
-    AzureBlobStorage(powerpages, "Portal Sites &\\nDocuments", "")
+  rectangle "OneDrive" as odb_section {
+    database "OneDrive Files" as odb #90caf9
   }
 }
 
-' Identity
-rectangle "Identity & RBAC" as identity #f3e5f5 {
-  AzureActiveDirectory(entra, "Entra ID", "")
-  AzureManagedIdentity(mi_m365, "M365 Service\\nPrincipal", "")
-  AzureManagedIdentity(mi_pp, "Power Platform\\nService Principal", "")
+rectangle "Power Platform\\n(Protected B Environment)" as pp_region <<boundary>> #e8f5e9 {
+  
+  rectangle "Dataverse" as dv_section {
+    database "Dataverse Tables" as dataverse #a5d6a7
+    database "File & Image\\nColumns" as dv_files #c8e6c9
+  }
+  
+  rectangle "Power Apps" as pa_section {
+    component "Canvas &\\nModel Apps" as powerapps #a5d6a7
+  }
+  
+  rectangle "Power Automate" as flow_section {
+    component "Cloud Flows" as powerauto #a5d6a7
+  }
+  
+  rectangle "Power Pages" as pages_section {
+    component "Portal Sites &\\nDocuments" as powerpages #a5d6a7
+  }
 }
 
-' Monitoring
-rectangle "Monitoring & Automation" as monitoring #fff3e0 {
-  AzureDevOps(devops, "DevOps\\nPipelines", "")
-  AzureLogAnalyticsWorkspace(law, "Log Analytics", "")
-  AzureLogicApps(rotation, "Key Rotation\\nAutomation", "")
+rectangle "Identity & RBAC" as identity_region <<boundary>> #f3e5f5 {
+  actor "Entra ID" as entra #ce93d8
+  component "M365 Service\\nPrincipal" as mi_m365 #e1bee7
+  component "Power Platform\\nService Principal" as mi_pp #e1bee7
 }
 
-' Connections - Key Wrapping
+rectangle "Monitoring & Automation" as monitoring_region <<boundary>> #fff3e0 {
+  component "DevOps\\nPipelines" as devops #ffcc80
+  database "Log Analytics" as law #ffe0b2
+  component "Key Rotation\\nAutomation" as rotation #ffcc80
+}
+
+' Key Wrapping
 root_key -[#red,bold]-> dep_spo : wraps
 root_key -[#red,bold]-> dep_exo : wraps
 root_key -[#red,bold]-> dep_teams : wraps
@@ -199,7 +185,7 @@ dep_dataverse -[#green,dashed]-> powerapps
 dep_dataverse -[#green,dashed]-> powerauto
 dep_dataverse -[#green,dashed]-> powerpages
 
-' Identity Connections
+' Identity
 entra --> mi_m365
 entra --> mi_pp
 mi_m365 -[#purple,dashed]-> root_key : RBAC
@@ -210,8 +196,7 @@ devops -[#gray]-> dep_spo : deploy
 rotation -[#orange]-> root_key : rotate
 root_key -[#gray,dotted]-> law : audit logs
 
-@enduml
-`
+@enduml`
   },
 
   /**
@@ -220,90 +205,71 @@ root_key -[#gray,dotted]-> law : audit logs
   m365: {
     name: 'm365_security',
     title: 'LCE M365 Security Architecture',
-    puml: `
-@startuml M365_Security
-!define AzurePuml https://raw.githubusercontent.com/plantuml-stdlib/Azure-PlantUML/master/dist
-!include AzurePuml/AzureCommon.puml
-!include AzurePuml/Security/AzureKeyVault.puml
-!include AzurePuml/Security/AzureSentinel.puml
-!include AzurePuml/Identity/AzureActiveDirectory.puml
-!include AzurePuml/Identity/AzureManagedIdentity.puml
-!include AzurePuml/Analytics/AzureLogAnalyticsWorkspace.puml
-!include AzurePuml/DevOps/AzureDevOps.puml
-!include AzurePuml/DevOps/AzurePipelines.puml
-!include AzurePuml/Networking/AzureVirtualNetwork.puml
-!include AzurePuml/Networking/AzureFirewall.puml
-!include AzurePuml/Compute/AzureFunction.puml
-!include AzurePuml/Integration/AzureLogicApps.puml
-!include AzurePuml/Storage/AzureBlobStorage.puml
+    puml: `@startuml M365_Security
+!include <C4/C4_Container>
 
 title LCE M365 Security Architecture\\nProtected B / NATO Classification
 
-skinparam linetype ortho
 skinparam backgroundColor white
 
-' Azure DevOps
-rectangle "Azure DevOps (LCE)" as devops_region #e8f5e9 {
-  AzureDevOps(devops, "LCE DevOps Org", "")
-  AzurePipelines(pipelines, "Automation\\nPipelines", "")
-  storage "PowerShell\\nModules" as ps_modules
+rectangle "Azure DevOps (LCE)" as devops_region <<boundary>> #e8f5e9 {
+  component "LCE DevOps Org" as devops #a5d6a7
+  component "Automation\\nPipelines" as pipelines #a5d6a7
+  file "PowerShell\\nModules" as ps_modules #c8e6c9
   
   devops --> pipelines
   pipelines --> ps_modules
 }
 
-' Identity
-rectangle "Identity & Zero Trust" as identity_region #fce4ec {
-  AzureActiveDirectory(entra, "Entra ID", "")
-  AzureManagedIdentity(mi, "Managed\\nIdentities", "")
-  rectangle "Conditional Access" as ca {
-    component "Protected B\\nPolicy" as ca_pb
-    component "NATO Policy" as ca_nato
+rectangle "Identity & Zero Trust" as identity_region <<boundary>> #fce4ec {
+  actor "Entra ID" as entra #f48fb1
+  component "Managed\\nIdentities" as mi #f8bbd9
+  
+  rectangle "Conditional Access" as ca_section {
+    component "Protected B\\nPolicy" as ca_pb #f8bbd9
+    component "NATO Policy" as ca_nato #f8bbd9
   }
   
   entra --> mi
-  entra --> ca
+  entra --> ca_section
 }
 
-' CMK
-rectangle "Customer Managed Keys" as cmk_region #ffebee {
-  AzureKeyVault(kv_primary, "Key Vault\\nPrimary", "Canada Central")
-  AzureKeyVault(kv_dr, "Key Vault\\nDR", "Canada East")
+rectangle "Customer Managed Keys" as cmk_region <<boundary>> #ffebee {
+  storage "Key Vault\\nPrimary" as kv_primary #ff8a80
+  storage "Key Vault\\nDR" as kv_dr #ffab91
   
   kv_primary -[#orange,dashed]-> kv_dr : geo-replicate
 }
 
-' M365
-rectangle "Microsoft 365 (Protected B Tenant)" as m365_region #fff3e0 {
+rectangle "Microsoft 365\\n(Protected B Tenant)" as m365_region <<boundary>> #fff3e0 {
+  
   rectangle "M365 Core" as m365_core {
-    component "Teams Premium" as teams
-    component "SharePoint\\nOnline" as spo
-    component "Exchange\\nOnline" as exo
+    component "Teams Premium" as teams #ffcc80
+    component "SharePoint\\nOnline" as spo #ffcc80
+    component "Exchange\\nOnline" as exo #ffcc80
   }
   
   rectangle "Microsoft Purview" as purview {
-    component "Sensitivity\\nLabels" as labels
-    component "DLP Policies" as dlp
-    component "Audit Logs" as audit
+    component "Sensitivity\\nLabels" as labels #ffe0b2
+    component "DLP Policies" as dlp #ffe0b2
+    component "Audit Logs" as audit #ffe0b2
   }
 }
 
-' Azure Infrastructure
-rectangle "Azure Infrastructure (GC Region)" as azure_region #e0f7fa {
-  AzureVirtualNetwork(vnet, "Hub VNet", "")
-  AzureFirewall(fw, "Azure\\nFirewall", "")
-  AzureFunction(func, "Compliance\\nFunctions", "")
-  AzureBlobStorage(storage, "Audit Log\\nStorage", "")
+rectangle "Azure Infrastructure\\n(GC Region)" as azure_region <<boundary>> #e0f7fa {
+  component "Hub VNet" as vnet #80deea
+  component "Azure\\nFirewall" as fw #80deea
+  component "Compliance\\nFunctions" as func #4dd0e1
+  database "Audit Log\\nStorage" as storage #80deea
   
   vnet --> fw
   func --> storage
 }
 
-' Security Operations
-rectangle "Security Operations Center" as soc_region #f3e5f5 {
-  AzureSentinel(sentinel, "Microsoft\\nSentinel", "")
-  AzureLogAnalyticsWorkspace(law, "Log Analytics", "")
-  AzureLogicApps(alerts, "Alert\\nPlaybooks", "")
+rectangle "Security Operations Center" as soc_region <<boundary>> #f3e5f5 {
+  component "Microsoft\\nSentinel" as sentinel #ce93d8
+  database "Log Analytics" as law #e1bee7
+  component "Alert\\nPlaybooks" as alerts #ce93d8
   
   law --> sentinel
   sentinel --> alerts
@@ -319,8 +285,7 @@ audit -[#orange]-> law : stream
 func -[#gray,dotted]-> law : metrics
 alerts -[#red]-> teams : notify
 
-@enduml
-`
+@enduml`
   },
 
   /**
@@ -329,56 +294,46 @@ alerts -[#red]-> teams : notify
   teams: {
     name: 'teams_premium_security',
     title: 'Teams Premium - Protected B / NATO Meeting Security',
-    puml: `
-@startuml Teams_Premium
-!define AzurePuml https://raw.githubusercontent.com/plantuml-stdlib/Azure-PlantUML/master/dist
-!include AzurePuml/AzureCommon.puml
-!include AzurePuml/Security/AzureKeyVault.puml
-!include AzurePuml/Security/AzureSentinel.puml
-!include AzurePuml/Identity/AzureActiveDirectory.puml
-!include AzurePuml/Analytics/AzureLogAnalyticsWorkspace.puml
-!include AzurePuml/Storage/AzureBlobStorage.puml
+    puml: `@startuml Teams_Premium
+!include <C4/C4_Container>
 
 title Teams Premium - Protected B / NATO Meeting Security
 
-skinparam linetype ortho
 skinparam backgroundColor white
 
-' Users
-rectangle "Meeting Participants" as users_region #e3f2fd {
-  actor "Protected B\\nCleared" as user_pb
-  actor "NATO\\nCleared" as user_nato
-  actor "External\\nGuests" as user_ext
+rectangle "Meeting Participants" as users_region <<boundary>> #e3f2fd {
+  actor "Protected B\\nCleared" as user_pb #90caf9
+  actor "NATO\\nCleared" as user_nato #90caf9
+  actor "External\\nGuests" as user_ext #bbdefb
 }
 
-' Identity
-rectangle "Identity & Conditional Access" as identity_region #fce4ec {
-  AzureActiveDirectory(entra, "Entra ID", "")
+rectangle "Identity & Conditional Access" as identity_region <<boundary>> #fce4ec {
+  actor "Entra ID" as entra #f48fb1
   
   rectangle "Conditional Access Policies" as ca_policies {
-    component "Protected B\\nPolicy" as ca_pb
-    component "NATO Policy" as ca_nato
-    component "Guest Policy" as ca_guest
+    component "Protected B\\nPolicy" as ca_pb #f8bbd9
+    component "NATO Policy" as ca_nato #f8bbd9
+    component "Guest Policy" as ca_guest #f8bbd9
   }
   
   entra --> ca_policies
 }
 
-' Sensitivity Labels
-rectangle "Microsoft Purview - Sensitivity Labels" as labels_region #fff3e0 {
+rectangle "Microsoft Purview\\nSensitivity Labels" as labels_region <<boundary>> #fff3e0 {
+  
   rectangle "Meeting Labels" as meeting_labels {
-    component "Unclassified" as label_unc
-    component "Protected B" as label_pb
-    component "NATO RESTRICTED" as label_nato_r
-    component "NATO SECRET" as label_nato_s
+    component "Unclassified" as label_unc #fff9c4
+    component "Protected B" as label_pb #ffcc80
+    component "NATO\\nRESTRICTED" as label_nato_r #ffab91
+    component "NATO\\nSECRET" as label_nato_s #ff8a65
   }
   
   rectangle "Label Enforcements" as enforcements {
-    component "Watermarking" as enf_water
-    component "Recording\\nRestrictions" as enf_record
-    component "Copy/Paste\\nControls" as enf_copy
-    component "E2E Encryption" as enf_e2e
-    component "Lobby Controls" as enf_lobby
+    component "Watermarking" as enf_water #ffe0b2
+    component "Recording\\nRestrictions" as enf_record #ffe0b2
+    component "Copy/Paste\\nControls" as enf_copy #ffe0b2
+    component "E2E Encryption" as enf_e2e #ffe0b2
+    component "Lobby Controls" as enf_lobby #ffe0b2
   }
   
   label_pb --> enf_water
@@ -388,47 +343,43 @@ rectangle "Microsoft Purview - Sensitivity Labels" as labels_region #fff3e0 {
   label_nato_s --> enf_e2e
 }
 
-' Teams Premium
-rectangle "Teams Premium Features" as teams_region #e8f5e9 {
-  component "Teams Premium\\nMeetings" as teams
+rectangle "Teams Premium Features" as teams_region <<boundary>> #e8f5e9 {
+  component "Teams Premium\\nMeetings" as teams #a5d6a7
   
   rectangle "Meeting Protection" as protection {
-    component "Dynamic\\nWatermarks" as feat_water
-    component "End-to-End\\nEncryption" as feat_e2e
-    component "Presenter\\nControls" as feat_present
-    component "Advanced\\nLobby" as feat_lobby
+    component "Dynamic\\nWatermarks" as feat_water #c8e6c9
+    component "End-to-End\\nEncryption" as feat_e2e #c8e6c9
+    component "Presenter\\nControls" as feat_present #c8e6c9
+    component "Advanced\\nLobby" as feat_lobby #c8e6c9
   }
   
   teams --> protection
 }
 
-' CMK
-rectangle "Customer Managed Keys" as cmk_region #ffebee {
-  AzureKeyVault(kv, "Key Vault\\n(HSM)", "")
-  AzureKeyVault(dep_teams, "Teams DEP\\nKey", "")
+rectangle "Customer Managed Keys" as cmk_region <<boundary>> #ffebee {
+  storage "Key Vault\\n(HSM)" as kv #ff8a80
+  storage "Teams DEP\\nKey" as dep_teams #ffcdd2
   
   kv -[#red,bold]-> dep_teams : wraps
 }
 
-' Compliance
-rectangle "Compliance & Recording" as compliance_region #f3e5f5 {
-  AzureBlobStorage(recordings, "Meeting\\nRecordings", "")
-  AzureBlobStorage(transcripts, "Transcripts", "")
-  component "7-Year\\nRetention" as retention
+rectangle "Compliance & Recording" as compliance_region <<boundary>> #f3e5f5 {
+  database "Meeting\\nRecordings" as recordings #ce93d8
+  database "Transcripts" as transcripts #ce93d8
+  component "7-Year\\nRetention" as retention #e1bee7
   
   recordings --> retention
   transcripts --> retention
 }
 
-' Monitoring
-rectangle "Security Operations" as soc_region #e0f7fa {
-  AzureLogAnalyticsWorkspace(law, "Log Analytics", "")
-  AzureSentinel(sentinel, "Sentinel", "")
+rectangle "Security Operations" as soc_region <<boundary>> #e0f7fa {
+  database "Log Analytics" as law #80deea
+  component "Sentinel" as sentinel #4dd0e1
   
   law --> sentinel
 }
 
-' Connections
+' User Authentication
 user_pb -[#green]-> ca_pb : MFA + Device
 user_nato -[#green]-> ca_nato : MFA + CAC
 user_ext -[#orange]-> ca_guest : Guest Approval
@@ -437,16 +388,18 @@ ca_pb -[#blue]-> teams
 ca_nato -[#blue]-> teams
 ca_guest -[#orange,dashed]-> teams : limited
 
+' Labels
 label_pb -[#purple]-> teams : auto-apply
 label_nato_r -[#purple]-> teams : manual
 
+' Encryption
 dep_teams -[#red,bold]-> teams : encrypts
 dep_teams -[#red,bold]-> recordings : encrypts
 
+' Monitoring
 teams -[#gray,dotted]-> law : audit
 
-@enduml
-`
+@enduml`
   }
 };
 
@@ -455,7 +408,7 @@ teams -[#gray,dotted]-> law : audit
 // =============================================================================
 
 /**
- * Encode PlantUML diagram for Kroki API
+ * Encode PlantUML diagram for Kroki API (deflate + base64)
  */
 function encodePlantUML(puml) {
   const data = Buffer.from(puml, 'utf8');
@@ -474,12 +427,13 @@ async function generateDiagramImage(puml, verbose = false) {
   const url = `${config.kroki.url}/plantuml/png/${encoded}`;
   
   if (verbose) {
-    console.log(`  Calling Kroki API...`);
+    console.log(`  Calling Kroki API at ${config.kroki.url}...`);
   }
   
   const response = await fetch(url);
   if (!response.ok) {
-    throw new Error(`Kroki API error: ${response.status} ${response.statusText}`);
+    const errorText = await response.text();
+    throw new Error(`Kroki API error: ${response.status} ${response.statusText}\n${errorText}`);
   }
   
   return Buffer.from(await response.arrayBuffer());
@@ -695,8 +649,10 @@ async function main() {
   
   console.log('');
   console.log('╔════════════════════════════════════════════════════════════╗');
-  console.log('║       Azure Architecture Diagram Generator v2.0            ║');
+  console.log('║       Azure Architecture Diagram Generator v2.1            ║');
   console.log('╚════════════════════════════════════════════════════════════╝');
+  console.log('');
+  console.log(`Using Kroki at: ${config.kroki.url}`);
   console.log('');
   
   // Determine which diagrams to generate
@@ -730,6 +686,9 @@ async function main() {
       log(`  ✓ ${diagram.name}`, true);
     } catch (error) {
       console.error(`  ✗ Failed to generate ${name}: ${error.message}`);
+      if (options.verbose) {
+        console.error(error.stack);
+      }
       process.exit(1);
     }
   }
