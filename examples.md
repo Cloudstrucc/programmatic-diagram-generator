@@ -13,7 +13,10 @@ node ai-diagram.js generate \
 # Output: .temp-ai-diagrams/diagram.drawio
 
 # Power Platform CMK
-
+node ai-diagram.js generate \
+  --template power-platform-cmk \
+  --style drawio \
+  --open
 
 # Azure Landing Zone
 node ai-diagram.js generate \
@@ -489,16 +492,16 @@ node ai-diagram.js generate \
 
 ## 📊 Complete Format Matrix
 
-| Want                              | Command Example                                 |
-| --------------------------------- | ----------------------------------------------- |
-| **Azure PNG**               | `--template m365-cmk --style azure`           |
-| **Azure Draw.io**           | `--template m365-cmk --style drawio`          |
-| **AWS PNG**                 | `--template aws-serverless --style aws`       |
-| **AWS Draw.io**             | `--template aws-serverless --style drawio`    |
-| **K8s PNG**                 | `--template k8s-microservices --style k8s`    |
-| **K8s Draw.io**             | `--template k8s-microservices --style drawio` |
-| **UML PNG**                 | `--template uml-class --style uml`            |
-| **UML Draw.io**             | `--template uml-class --style drawio`         |
-| **Any template as Draw.io** | `--template <any> --style drawio`             |
+| Want | Command Example |
+|------|-----------------|
+| **Azure PNG** | `--template m365-cmk --style azure` |
+| **Azure Draw.io** | `--template m365-cmk --style drawio` |
+| **AWS PNG** | `--template aws-serverless --style aws` |
+| **AWS Draw.io** | `--template aws-serverless --style drawio` |
+| **K8s PNG** | `--template k8s-microservices --style k8s` |
+| **K8s Draw.io** | `--template k8s-microservices --style drawio` |
+| **UML PNG** | `--template uml-class --style uml` |
+| **UML Draw.io** | `--template uml-class --style drawio` |
+| **Any template as Draw.io** | `--template <any> --style drawio` |
 
 **Every template × 2 formats = Maximum flexibility!** 🎉

@@ -62,7 +62,6 @@ cp .env.example .env
 ```
 
 Edit `.env`:
-
 ```bash
 ANTHROPIC_API_KEY=sk-ant-your-key-here
 CLAUDE_MODEL=claude-sonnet-4-5-20250929
@@ -73,11 +72,9 @@ CLAUDE_MODEL=claude-sonnet-4-5-20250929
 Run `node ai-diagram.js styles` to see all:
 
 ### Editable Diagrams
-
 - **drawio** - Draw.io / diagrams.net (XML) ✨ NEW!
 
 ### Cloud Providers
-
 - **azure** - Microsoft Azure
 - **aws** - Amazon Web Services
 - **gcp** - Google Cloud Platform
@@ -89,19 +86,16 @@ Run `node ai-diagram.js styles` to see all:
 - **outscale** - Outscale (3DS)
 
 ### Container & DevOps
-
 - **k8s** - Kubernetes
 - **generic** - Generic / Open Source
 
 ### Enterprise Architecture
-
 - **c4** - C4 Model
 - **uml** - UML / UML2
 - **archimate** - ArchiMate
 - **enterprise** - Enterprise (TOGAF)
 
 ### SaaS & Specialized
-
 - **elastic** - Elastic Stack
 - **firebase** - Firebase
 
@@ -120,7 +114,6 @@ node ai-diagram.js generate --template m365-cmk --style drawio --open
 ```
 
 Available Azure templates:
-
 - `m365-cmk` - M365 Customer Managed Keys
 - `power-platform-cmk` - Power Platform CMK
 - `azure-landing-zone` - Enterprise landing zone
@@ -154,7 +147,6 @@ node ai-diagram.js generate --template oss-secrets --style drawio --open
 ```
 
 **View all templates:**
-
 ```bash
 node ai-diagram.js templates
 ```
@@ -384,11 +376,11 @@ LOCAL_OUTPUT_DIR=./output
 
 Control diagram complexity:
 
-| Level          | Nodes | Clusters | Description                         |
-| -------------- | ----- | -------- | ----------------------------------- |
-| `simple`     | 5-8   | 1-2      | Basic, minimal detail               |
-| `standard`   | 8-15  | 3-5      | Balanced detail (default)           |
-| `enterprise` | 15+   | 5+       | Full detail, automation, monitoring |
+| Level | Nodes | Clusters | Description |
+|-------|-------|----------|-------------|
+| `simple` | 5-8 | 1-2 | Basic, minimal detail |
+| `standard` | 8-15 | 3-5 | Balanced detail (default) |
+| `enterprise` | 15+ | 5+ | Full detail, automation, monitoring |
 
 ```bash
 node ai-diagram.js generate "platform" --quality enterprise
@@ -417,20 +409,19 @@ node ai-diagram.js publish --target github --clean
 
 ## Format Comparison
 
-| Feature                | Python (PNG)      | Draw.io (XML)       |
-| ---------------------- | ----------------- | ------------------- |
-| **Editable**     | ❌ No             | ✅ Yes              |
-| **Export**       | PNG only          | PNG, SVG, PDF, XML  |
-| **Best For**     | Documentation     | Client deliverables |
-| **Requirements** | Python + Graphviz | None                |
-| **Speed**        | Fast              | Fast                |
+| Feature | Python (PNG) | Draw.io (XML) |
+|---------|-------------|---------------|
+| **Editable** | ❌ No | ✅ Yes |
+| **Export** | PNG only | PNG, SVG, PDF, XML |
+| **Best For** | Documentation | Client deliverables |
+| **Requirements** | Python + Graphviz | None |
+| **Speed** | Fast | Fast |
 
 ## Troubleshooting
 
 ### Draw.io Issues
 
 If XML generation fails:
-
 1. Be more specific in description
 2. Simplify architecture
 3. Try with `--verbose` flag
@@ -451,13 +442,11 @@ sudo apt-get install graphviz  # Linux
 ### Icon Import Errors
 
 Common fixes:
-
 - `Fluentd` → Use `FluentBit`
 - `Tekton` → Use `GithubActions`
 - `Podman` → Use `Docker`
 
 Edit `.temp-ai-diagrams/diagram.py` and run:
-
 ```bash
 node ai-diagram.js regenerate --open
 ```
@@ -465,12 +454,10 @@ node ai-diagram.js regenerate --open
 ## What Changed in v6.1?
 
 **✅ Added:**
-
 - Draw.io style for editable XML diagrams
 - All templates compatible with draw.io
 
 **✅ Kept (100% intact):**
-
 - All 40+ original templates
 - All 17+ Python diagram styles
 - All cloud providers (Azure, AWS, GCP, Alibaba, IBM, OCI, etc.)
@@ -480,7 +467,6 @@ node ai-diagram.js regenerate --open
 - Smart description enhancement
 
 **Usage:**
-
 ```bash
 # Before (v6.0 - still works!)
 node ai-diagram.js generate --template m365-cmk --style azure
