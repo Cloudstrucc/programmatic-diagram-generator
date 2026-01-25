@@ -1,0 +1,107 @@
+<section style="background: var(--light-bg); padding: 60px 0 80px;">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="text-center mb-5">
+                    <h1>Generate AI Diagram</h1>
+                    <p class="text-muted">Describe your architecture and let AI create it</p>
+                    <div class="mt-3">
+                        <span class="badge bg-success">{{remaining}} diagrams remaining today</span>
+                        <span class="badge bg-secondary">{{user.tier}} tier</span>
+                    </div>
+                </div>
+
+                {{#unless canCreate}}
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    You've reached your daily limit of {{limit}} diagrams. 
+                    <a href="/pricing" class="alert-link">Upgrade your plan</a> for more diagrams.
+                </div>
+                {{/unless}}
+
+                <div class="card shadow" style="border: 2px solid #f0f0f0; border-radius: 15px;">
+                    <div class="card-body p-5">
+                        <form id="generator-form">
+                            <div class="mb-4">
+                                <label for="title" class="form-label fw-bold">Diagram Title</label>
+                                <input 
+                                    type="text" 
+                                    class="form-control form-control-lg" 
+                                    id="title" 
+                                    name="title" 
+                                    placeholder="e.g., Azure AKS Production Setup"
+                                    required
+                                    {{#unless canCreate}}disabled{{/unless}}
+                                >
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="prompt" class="form-label fw-bold">Description</label>
+                                <textarea 
+                                    class="form-control" 
+                                    id="prompt" 
+                                    name="prompt" 
+                                    rows="4" 
+                                    placeholder="Describe your architecture... e.g., 'Azure AKS cluster with 3 node pools, Azure SQL Database, Application Gateway, and Azure Key Vault for secrets management'"
+                                    required
+                                    {{#unless canCreate}}disabled{{/unless}}
+                                ></textarea>
+                                <small class="text-muted">Be specific for better results</small>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <label for="diagramType" class="form-label fw-bold">Diagram Type</label>
+                                    <select class="form-select form-select-lg" id="diagramType" name="diagramType" {{#unless canCreate}}disabled{{/unless}}>
+                                        <option value="python">Python (PNG)</option>
+                                        <option value="drawio">Draw.io (XML)</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="style" class="form-label fw-bold">Style</label>
+                                    <select class="form-select form-select-lg" id="style" name="style" {{#unless canCreate}}disabled{{/unless}}>
+                                        <option value="azure">Azure</option>
+                                        <option value="aws">AWS</option>
+                                        <option value="gcp">GCP</option>
+                                        <option value="k8s">Kubernetes</option>
+                                        <option value="generic">Generic</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="quality" class="form-label fw-bold">Quality Level</label>
+                                <select class="form-select form-select-lg" id="quality" name="quality" {{#unless canCreate}}disabled{{/unless}}>
+                                    <option value="simple">Simple (5-8 nodes)</option>
+                                    <option value="standard" selected>Standard (8-15 nodes)</option>
+                                    <option value="enterprise">Enterprise (15+ nodes)</option>
+                                </select>
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg" style="background: var(--secondary-color); border: none;" {{#unless canCreate}}disabled{{/unless}}>
+                                    <i class="bi bi-magic me-2"></i>Generate Diagram
+                                </button>
+                            </div>
+                        </form>
+
+                        <div id="status-area" class="mt-4" style="display: none;">
+                            <div class="alert alert-info">
+                                <div class="d-flex align-items-center">
+                                    <div class="spinner-border spinner-border-sm me-3" role="status"></div>
+                                    <div>
+                                        <strong>Generating your diagram...</strong>
+                                        <p class="mb-0 small" id="status-text">Please wait...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script src="/js/diagram-generator.js"></script>

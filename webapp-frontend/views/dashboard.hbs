@@ -1,0 +1,117 @@
+<section style="background: var(--light-bg); padding: 60px 0 80px;">
+    <div class="container">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h1>Welcome back, {{user.name}}!</h1>
+                <p class="text-muted">Manage your diagrams and account</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="/diagrams/generator" class="btn btn-primary-hero">
+                    <i class="bi bi-plus-circle me-2"></i>New Diagram
+                </a>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-diagram-3 me-3" style="font-size: 2.5rem; color: var(--secondary-color);"></i>
+                        <div>
+                            <div class="stat-value">{{stats.total}}</div>
+                            <div class="text-muted">Total Diagrams</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-check-circle me-3" style="font-size: 2.5rem; color: var(--success-color);"></i>
+                        <div>
+                            <div class="stat-value">{{stats.today}}</div>
+                            <div class="text-muted">Today</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-hourglass-split me-3" style="font-size: 2.5rem; color: var(--accent-color);"></i>
+                        <div>
+                            <div class="stat-value">{{stats.remaining}}</div>
+                            <div class="text-muted">Remaining</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-award me-3" style="font-size: 2.5rem; color: var(--secondary-color);"></i>
+                        <div>
+                            <div class="stat-value text-capitalize">{{user.tier}}</div>
+                            <div class="text-muted">Current Tier</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Diagrams -->
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3>Recent Diagrams</h3>
+                    <a href="/diagrams/my-diagrams" class="btn btn-outline-primary">View All</a>
+                </div>
+
+                {{#if recentDiagrams.length}}
+                <div class="row g-4">
+                    {{#each recentDiagrams}}
+                    <div class="col-md-4">
+                        <div class="card h-100" style="border: 2px solid #f0f0f0; border-radius: 10px;">
+                            <div class="card-body">
+                                <h5 class="card-title">{{this.title}}</h5>
+                                <p class="card-text text-muted">{{truncate this.prompt 100}}</p>
+                                <div class="mb-3">
+                                    <span class="badge bg-primary">{{this.diagramType}}</span>
+                                    <span class="badge bg-secondary">{{this.quality}}</span>
+                                    {{#if (eq this.status 'completed')}}
+                                    <span class="badge bg-success">Completed</span>
+                                    {{else if (eq this.status 'generating')}}
+                                    <span class="badge bg-warning">Generating...</span>
+                                    {{else}}
+                                    <span class="badge bg-danger">Failed</span>
+                                    {{/if}}
+                                </div>
+                                <div class="d-grid">
+                                    <a href="/diagrams/view/{{this._id}}" class="btn btn-outline-primary btn-sm">View Diagram</a>
+                                </div>
+                            </div>
+                            <div class="card-footer text-muted small">
+                                {{formatDate this.createdAt}}
+                            </div>
+                        </div>
+                    </div>
+                    {{/each}}
+                </div>
+                {{else}}
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox" style="font-size: 4rem; color: #ccc;"></i>
+                    <p class="text-muted mt-3">No diagrams yet. Create your first one!</p>
+                    <a href="/diagrams/generator" class="btn btn-primary-hero mt-2">
+                        <i class="bi bi-plus-circle me-2"></i>Generate Diagram
+                    </a>
+                </div>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,69 @@
+<section style="background: var(--light-bg); padding: 60px 0 80px;">
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h1>{{diagram.title}}</h1>
+                <p class="text-muted">{{diagram.prompt}}</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="/diagrams/my-diagrams" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Back to My Diagrams
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-9">
+                <div class="card" style="border: 2px solid #f0f0f0; border-radius: 10px;">
+                    <div class="card-body p-4">
+                        {{#if (eq diagram.status 'completed')}}
+                            {{#if diagram.imageData}}
+                            <img src="data:image/png;base64,{{diagram.imageData}}" class="img-fluid rounded" alt="{{diagram.title}}" style="max-width: 100%;">
+                            {{else if diagram.xmlData}}
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                This is a Draw.io XML diagram. Download it and open in Draw.io to view.
+                            </div>
+                            <pre class="bg-light p-3 rounded" style="max-height: 400px; overflow: auto;"><code>{{diagram.xmlData}}</code></pre>
+                            {{/if}}
+                        {{else if (eq diagram.status 'generating')}}
+                        <div class="alert alert-warning">
+                            <div class="d-flex align-items-center">
+                                <div class="spinner-border spinner-border-sm me-3"></div>
+                                <div>This diagram is still being generated. Please refresh the page in a moment.</div>
+                            </div>
+                        </div>
+                        {{else}}
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Failed to generate diagram. Error: {{diagram.error}}
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-3">
+                <div class="card" style="border: 2px solid #f0f0f0; border-radius: 10px;">
+                    <div class="card-body">
+                        <h5>Details</h5>
+                        <hr>
+                        <p><strong>Type:</strong> {{diagram.diagramType}}</p>
+                        <p><strong>Style:</strong> {{diagram.style}}</p>
+                        <p><strong>Quality:</strong> {{diagram.quality}}</p>
+                        <p><strong>Status:</strong> 
+                            {{#if (eq diagram.status 'completed')}}
+                            <span class="badge bg-success">Completed</span>
+                            {{else if (eq diagram.status 'generating')}}
+                            <span class="badge bg-warning">Generating</span>
+                            {{else}}
+                            <span class="badge bg-danger">Failed</span>
+                            {{/if}}
+                        </p>
+                        <p><strong>Created:</strong> {{formatDate diagram.createdAt}}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
