@@ -3,12 +3,14 @@ node_modules/
 package-lock.json
 .pnp
 .pnp.js
+*.tgz
 
 # Environment
 .env
 .env.local
 .env.*.local
 *.env
+!docs/ENV-TEMPLATE.md
 
 # Production builds
 dist/
@@ -20,6 +22,8 @@ logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
 
 # Runtime data
 pids
@@ -27,12 +31,14 @@ pids
 *.seed
 *.pid.lock
 
-# Diagrams (generated)
+# Diagrams (generated outputs)
 diagrams/
 .temp-ai-diagrams/
 *.png
 *.drawio
 *.py
+!docs/**/*.png
+!docs/**/*.drawio
 
 # OS files
 .DS_Store
@@ -55,22 +61,25 @@ Thumbs.db
 # Testing
 coverage/
 .nyc_output
+*.lcov
 
 # Misc
 .npm
 .eslintcache
 .node_repl_history
 .yarn-integrity
-*.tgz
 
 # MongoDB data
 data/db/
 
-# Security
+# Security - NEVER COMMIT THESE
 .jwt-token
 *.pem
 *.key
 *.cert
+*-token
+*_token
+*.secret
 
 # Python
 __pycache__/
@@ -80,3 +89,8 @@ __pycache__/
 env/
 venv/
 ENV/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Backup branches
+backup-*
