@@ -1,0 +1,15 @@
+services:
+  api:
+    build: .
+    restart: always  # Always restart on failure
+    environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
