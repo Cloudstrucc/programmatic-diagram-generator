@@ -1,506 +1,474 @@
-# AI-Powered Architecture Diagram Generator v6.1
+# AI Diagram Generator
 
-Generate professional architecture diagrams from natural language descriptions using Claude AI.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org)
+[![Python](https://img.shields.io/badge/python-%3E%3D3.8-blue)](https://www.python.org)
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)
-![Python](https://img.shields.io/badge/python-%3E%3D3.8-blue.svg)
-![Version](https://img.shields.io/badge/version-6.1-blue.svg)
+AI-powered diagram generation toolkit with both CLI and API interfaces. Generate professional architecture diagrams using natural language prompts with support for 40+ templates and 18+ cloud/enterprise icon styles.
+
+## 🚀 Quick Links
+
+- **[CLI Tool](./cli/README.md)** - Command-line diagram generator
+- **[API Server](./api/README.md)** - RESTful API with queue management
+- **[Documentation](./docs/)** - Complete documentation
+- **[Installation Scripts](./scripts/)** - Setup helpers
 
 ## ✨ What's New in v6.1
 
-- 🎨 **Draw.io Style Added** - Use `--style drawio` for editable XML diagrams
-- 📊 **All Templates Compatible** - Every template now works with draw.io
-- 🔄 **Same Great Features** - All 40+ templates, publishing, quality presets intact
+- 🎨 **Draw.io Support** - Generate editable XML diagrams with `--style drawio`
+- 📊 **All Templates Compatible** - Every template works with both PNG and Draw.io formats
+- 🔄 **Same Great Features** - All 40+ templates, 18+ styles, and quality presets intact
 
-## Features
+## 📦 What's Included
 
-- 🤖 **AI-Powered** - Describe architecture in plain English
-- 🎨 **18+ Diagram Styles** - Azure, AWS, GCP, Kubernetes, **Draw.io**, UML, ArchiMate, C4, Elastic, Firebase, and more
-- 📊 **Quality Presets** - Simple, Standard, Enterprise detail levels
-- 📋 **40+ Templates** - M365 CMK, Zero Trust, AWS Serverless, K8s Microservices, and more
-- 🧠 **Smart Enhancement** - Auto-suggests missing components
-- 📤 **Multi-Target Publishing** - GitHub, Azure DevOps, local filesystem
+### 🖥️ CLI Tool (`cli/`)
 
-## Quick Start
+Command-line interface for quick diagram generation.
 
+**Features:**
+- 40+ built-in templates (M365 CMK, Azure Landing Zones, AWS Serverless, K8s, etc.)
+- 18+ icon styles (Azure, AWS, GCP, Kubernetes, Draw.io, C4, UML, ArchiMate, etc.)
+- 3 quality levels (Simple, Standard, Enterprise)
+- AI-powered generation using Claude Sonnet 4.5
+- PNG and editable Draw.io XML output
+
+**Quick Start:**
 ```bash
-# Python diagram (existing - works as before)
-node ai-diagram.js generate "web app with database" --style azure --open
-
-# Draw.io diagram (NEW!)
-node ai-diagram.js generate "web app with database" --style drawio --open
-
-# Use any template with draw.io
-node ai-diagram.js generate --template m365-cmk --style drawio --open
-
-# List all styles
-node ai-diagram.js styles
-```
-
-## Installation
-
-### 1. Install Dependencies
-
-```bash
+cd cli
 npm install
+pip3 install diagrams graphviz anthropic
+brew install graphviz
+
+export ANTHROPIC_API_KEY="your-key"
+node ai-diagram.js generate "Azure AKS cluster" --style azure --open
 ```
 
-### 2. Install Python (for Python diagram styles)
+[➡️ Full CLI Documentation](./cli/README.md)
 
+### 🌐 API Server (`api/`)
+
+Production-ready Node.js API with advanced features.
+
+**Features:**
+- RESTful API with JWT authentication
+- Dual format support (Draw.io XML + Python PNG diagrams)
+- Intelligent queue management with priority processing
+- Rate limiting and subscription tiers (Free, Basic, Pro, Enterprise)
+- Real-time WebSocket updates
+- Usage tracking and cost estimation
+- Docker support for easy deployment
+
+**Quick Start:**
 ```bash
-pip install diagrams
-brew install graphviz  # macOS
+cd api
+npm install
+cp .env.example .env  # Add your Anthropic API key
+docker run -d -p 27017:27017 --name mongodb mongo:latest
+npm start
 ```
 
-**Note:** Python/Graphviz **not needed** for draw.io style!
+[➡️ Full API Documentation](./api/README.md)
 
-### 3. Setup Environment
+## 🎯 Choose Your Path
 
-```bash
-cp .env.example .env
-```
+### For Developers & DevOps
 
-Edit `.env`:
-```bash
-ANTHROPIC_API_KEY=sk-ant-your-key-here
-CLAUDE_MODEL=claude-sonnet-4-5-20250929
-```
+**Use the CLI** if you want to:
+- Generate diagrams quickly from command line
+- Integrate into scripts and automation
+- Create diagrams for documentation
+- Test different styles and templates
 
-## Available Styles
+### For Teams & Organizations
 
-Run `node ai-diagram.js styles` to see all:
+**Use the API** if you want to:
+- Build diagram generation into applications
+- Manage team diagram creation centrally
+- Track usage and costs
+- Implement rate limiting and authentication
+- Scale to multiple users
+
+## 🎨 Supported Diagram Types
 
 ### Editable Diagrams
-- **drawio** - Draw.io / diagrams.net (XML) ✨ NEW!
+- **Draw.io/Diagrams.net** - XML format, fully editable
 
-### Cloud Providers
-- **azure** - Microsoft Azure
-- **aws** - Amazon Web Services
-- **gcp** - Google Cloud Platform
-- **alibabacloud** - Alibaba Cloud
-- **ibm** - IBM Cloud
-- **oci** - Oracle Cloud (OCI)
-- **digitalocean** - DigitalOcean
-- **openstack** - OpenStack
-- **outscale** - Outscale (3DS)
+### Cloud Providers (PNG)
+- **Microsoft Azure** - 50+ Azure services
+- **Amazon Web Services** - 60+ AWS services
+- **Google Cloud Platform** - 40+ GCP services
+- **Alibaba Cloud, IBM Cloud, Oracle OCI, DigitalOcean, OpenStack, Outscale**
 
-### Container & DevOps
-- **k8s** - Kubernetes
-- **generic** - Generic / Open Source
+### Container & DevOps (PNG)
+- **Kubernetes** - Official K8s icons
+- **Generic/Open Source** - OSS tools and frameworks
+
+### Enterprise Architecture (PNG)
+- **C4 Model** - Context, Container, Component, Code diagrams
+- **UML 2.0** - Class, sequence, component diagrams
+- **ArchiMate** - Enterprise architecture framework
+- **TOGAF** - Enterprise architecture layers
+
+### Specialized (PNG)
+- **Elastic Stack** - Elasticsearch, Kibana, Logstash
+- **Firebase** - Google Firebase services
+
+## 📋 Available Templates (40+)
+
+### Microsoft 365 & Azure
+- `m365-cmk` - Microsoft 365 Customer Managed Keys
+- `power-platform-cmk` - Power Platform Customer Managed Keys
+- `azure-landing-zone` - Enterprise Azure Landing Zone
+- `zero-trust` - Zero Trust Security Architecture
+
+### AWS
+- `aws-serverless` - Serverless architecture with Lambda
+- `aws-eks` - Elastic Kubernetes Service platform
+
+### Google Cloud Platform
+- `gcp-data-platform` - Data platform with BigQuery
+
+### Kubernetes
+- `k8s-microservices` - Microservices architecture
+- `k8s-production` - Production cluster setup
+
+### Open Source
+- `oss-observability` - Prometheus, Grafana, Loki stack
+- `oss-cicd` - Jenkins, GitLab CI, GitHub Actions
+- `oss-secrets` - Vault, Sealed Secrets
 
 ### Enterprise Architecture
-- **c4** - C4 Model
-- **uml** - UML / UML2
-- **archimate** - ArchiMate
-- **enterprise** - Enterprise (TOGAF)
+- `c4-context`, `c4-container` - C4 Model diagrams
+- `uml-class`, `uml-sequence` - UML diagrams
+- `archimate-layered` - ArchiMate layered view
+- `togaf-layers` - TOGAF architecture layers
 
-### SaaS & Specialized
-- **elastic** - Elastic Stack
-- **firebase** - Firebase
+[➡️ View All Templates](./docs/examples.md)
 
-## Templates (40+)
+## 🚀 Quick Examples
 
-All templates work with **ANY style** including draw.io!
-
-### Azure Templates
+### CLI Examples
 
 ```bash
-# Python PNG
-node ai-diagram.js generate --template m365-cmk --style azure --open
-
-# Draw.io XML
-node ai-diagram.js generate --template m365-cmk --style drawio --open
-```
-
-Available Azure templates:
-- `m365-cmk` - M365 Customer Managed Keys
-- `power-platform-cmk` - Power Platform CMK
-- `azure-landing-zone` - Enterprise landing zone
-- `zero-trust` - Zero Trust architecture
-
-### AWS Templates
-
-```bash
-node ai-diagram.js generate --template aws-serverless --style drawio --open
-node ai-diagram.js generate --template aws-eks --style drawio --open
-```
-
-### GCP Templates
-
-```bash
-node ai-diagram.js generate --template gcp-data-platform --style drawio --open
-```
-
-### Kubernetes Templates
-
-```bash
-node ai-diagram.js generate --template k8s-microservices --style drawio --open
-```
-
-### Open Source Templates
-
-```bash
-node ai-diagram.js generate --template oss-observability --style drawio --open
-node ai-diagram.js generate --template oss-cicd --style drawio --open
-node ai-diagram.js generate --template oss-secrets --style drawio --open
-```
-
-**View all templates:**
-```bash
-node ai-diagram.js templates
-```
-
-## Usage Examples
-
-### 🎨 Draw.io Diagrams (Editable XML - NEW!)
-
-Generate editable diagrams that open in https://app.diagrams.net:
-
-```bash
-# Azure M365 CMK as editable draw.io
+# Generate Azure architecture diagram
+cd cli
 node ai-diagram.js generate \
-  --template m365-cmk \
-  --style drawio \
-  --open
-
-# AWS Serverless as editable draw.io
-node ai-diagram.js generate \
-  --template aws-serverless \
-  --style drawio \
-  --open
-
-# Kubernetes microservices as editable draw.io
-node ai-diagram.js generate \
-  --template k8s-microservices \
-  --style drawio \
-  --open
-
-# Custom AWS architecture as draw.io
-node ai-diagram.js generate \
-  "3-tier web app with Application Load Balancer, EC2 auto-scaling in 2 availability zones, RDS multi-AZ, ElastiCache Redis, S3 for static assets" \
-  --style drawio \
-  --open
-
-# Custom Azure architecture as draw.io
-node ai-diagram.js generate \
-  "AKS cluster with Application Gateway ingress, frontend and backend services, Azure SQL Database with private endpoint, Redis cache, Key Vault for secrets" \
-  --style drawio \
-  --open
-
-# Open Source observability as draw.io
-node ai-diagram.js generate \
-  --template oss-observability \
-  --style drawio \
-  --open
-```
-
-**Output:** `.temp-ai-diagrams/diagram.drawio` - Open in draw.io to edit, export as PNG/SVG/PDF
-
-### 📊 Python Diagrams (PNG Images)
-
-```bash
-# AWS architecture
-node ai-diagram.js generate \
-  "3-tier web app with ALB, EC2, RDS" \
-  --style drawio \
-  --open
-
-# Azure architecture  
-node ai-diagram.js generate \
-  "AKS cluster with SQL database" \
-  --style drawio \
-  --open
-
-# Use template with draw.io
-node ai-diagram.js generate \
-  --template m365-cmk \
-  --style drawio \
-  --open
-```
-
-### 📊 Python Diagrams (PNG Images)
-
-Generate PNG diagrams using official cloud provider icons:
-
-```bash
-# Azure M365 CMK with enterprise detail
-node ai-diagram.js generate \
-  --template m365-cmk \
+  "Azure AKS cluster with SQL database" \
   --style azure \
   --quality enterprise \
   --open
 
-# AWS Serverless architecture
+# Generate editable Draw.io diagram
 node ai-diagram.js generate \
   --template aws-serverless \
-  --style aws \
+  --style drawio \
   --open
 
-# GCP Data Platform
-node ai-diagram.js generate \
-  --template gcp-data-platform \
-  --style gcp \
-  --open
-
-# Kubernetes with full detail
-node ai-diagram.js generate \
-  --template k8s-microservices \
-  --style k8s \
-  --quality enterprise \
-  --open
-
-# Custom Kubernetes description
-node ai-diagram.js generate \
-  "Kubernetes cluster with Ingress controller, frontend deployment with 3 replicas, API deployment with HPA, PostgreSQL StatefulSet, Redis, Prometheus monitoring, Grafana dashboards" \
-  --style k8s \
-  --quality enterprise \
-  --open
-```
-
-**Output:** `.temp-ai-diagrams/diagram.png` - Ready to use in documentation
-
-### 🏛️ Enterprise Architecture
-
-```bash
-# Azure CMK
+# Use built-in template
 node ai-diagram.js generate \
   --template m365-cmk \
   --style azure \
-  --quality enterprise \
-  --open
-
-# AWS serverless
-node ai-diagram.js generate \
-  --template aws-serverless \
-  --style aws \
-  --open
-
-# Kubernetes
-node ai-diagram.js generate \
-  --template k8s-microservices \
-  --style k8s \
-  --open
+  --quality enterprise
 ```
 
-### Enterprise Architecture
+### API Examples
 
 ```bash
-# UML class diagram
-node ai-diagram.js generate \
-  "e-commerce class diagram" \
-  --style uml \
-  --open
+# Start the API server
+cd api
+npm start
 
-# ArchiMate layers
-node ai-diagram.js generate \
-  --template archimate-layered \
-  --style archimate \
-  --open
-
-# C4 container diagram
-node ai-diagram.js generate \
-  --template c4-container \
-  --style c4 \
-  --open
+# Generate diagram via API
+curl -X POST http://localhost:3000/api/diagram/generate \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{
+    "prompt": "3-tier web application",
+    "diagramType": "python",
+    "style": "azure",
+    "quality": "standard"
+  }'
 ```
 
-## Commands
-
-### Generate
-
-```bash
-node ai-diagram.js generate [description] [options]
-
-Options:
-  -s, --style <style>       Diagram style (default: azure)
-  -q, --quality <quality>   Quality: simple, standard, enterprise
-  -t, --template <template> Use predefined template
-  -o, --open                Open generated file
-  -v, --verbose             Verbose output
-```
-
-### List Commands
-
-```bash
-node ai-diagram.js templates  # List all 40+ templates
-node ai-diagram.js styles     # List all 18+ styles
-node ai-diagram.js quality    # List quality levels
-```
-
-### Preview & Regenerate
-
-```bash
-node ai-diagram.js preview --open       # Preview current diagram
-node ai-diagram.js preview --code       # Show Python source
-node ai-diagram.js regenerate --open    # Regenerate from spec
-```
-
-### Publishing
-
-```bash
-node ai-diagram.js publish --target local    # Save locally
-node ai-diagram.js publish --target github   # Push to GitHub
-node ai-diagram.js publish --target devops   # Push to Azure DevOps
-node ai-diagram.js publish --target all      # Publish to all targets
-```
-
-### Clean
-
-```bash
-node ai-diagram.js clean  # Remove temp files
-```
-
-## Configuration
-
-Create `.env` file:
-
-```bash
-# Required
-ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxx
-CLAUDE_MODEL=claude-sonnet-4-5-20250929
-
-# Optional - for publishing
-GITHUB_TOKEN=ghp_xxxxxx
-GITHUB_OWNER=your-username
-GITHUB_REPO=diagrams
-
-AZDO_TOKEN=xxxxxx
-AZDO_ORG=your-org
-AZDO_PROJECT=your-project
-
-LOCAL_OUTPUT_DIR=./output
-```
-
-## Quality Levels
-
-Control diagram complexity:
-
-| Level | Nodes | Clusters | Description |
-|-------|-------|----------|-------------|
-| `simple` | 5-8 | 1-2 | Basic, minimal detail |
-| `standard` | 8-15 | 3-5 | Balanced detail (default) |
-| `enterprise` | 15+ | 5+ | Full detail, automation, monitoring |
-
-```bash
-node ai-diagram.js generate "platform" --quality enterprise
-```
-
-## Opening Draw.io Files
-
-Generated `.drawio` files can be opened in:
-
-1. **Web:** https://app.diagrams.net
-2. **VS Code:** Install "Draw.io Integration" extension
-3. **Desktop:** https://github.com/jgraph/drawio-desktop/releases
-
-## Publishing Workflow
-
-```bash
-# 1. Generate diagram
-node ai-diagram.js generate --template m365-cmk --open
-
-# 2. Preview/edit if needed
-node ai-diagram.js preview --open
-
-# 3. Publish
-node ai-diagram.js publish --target github --clean
-```
-
-## Format Comparison
+## 📊 Format Comparison
 
 | Feature | Python (PNG) | Draw.io (XML) |
 |---------|-------------|---------------|
 | **Editable** | ❌ No | ✅ Yes |
-| **Export** | PNG only | PNG, SVG, PDF, XML |
-| **Best For** | Documentation | Client deliverables |
+| **Export Options** | PNG only | PNG, SVG, PDF, XML |
+| **Icon Quality** | Official cloud icons | Shapes and text |
+| **Best For** | Documentation, presentations | Client deliverables, editing |
 | **Requirements** | Python + Graphviz | None |
-| **Speed** | Fast | Fast |
+| **File Size** | Small (KB) | Medium (KB) |
 
-## Troubleshooting
+## 🏗️ Project Structure
 
-### Draw.io Issues
-
-If XML generation fails:
-1. Be more specific in description
-2. Simplify architecture
-3. Try with `--verbose` flag
-
-### Python: Graphviz Not Found
-
-```bash
-brew install graphviz  # macOS
-sudo apt-get install graphviz  # Linux
+```
+programmatic-diagram-generator/
+├── README.md                    # This file
+├── LICENSE                      # MIT License
+├── .gitignore                   # Git ignore rules
+│
+├── cli/                         # CLI Tool (standalone)
+│   ├── README.md                # CLI documentation
+│   ├── ai-diagram.js            # Main CLI script
+│   ├── package.json             # Dependencies
+│   └── .env.example             # Environment template
+│
+├── api/                         # API Server (standalone)
+│   ├── README.md                # API documentation
+│   ├── server.js                # Main server
+│   ├── config.js                # Configuration
+│   ├── package.json             # Dependencies
+│   ├── docker-compose.yml       # Docker setup
+│   ├── services/                # Business logic
+│   ├── routes/                  # API routes
+│   ├── middleware/              # Express middleware
+│   └── utils/                   # Utilities
+│
+├── docs/                        # Shared documentation
+│   ├── examples.md              # Usage examples
+│   ├── icon-reference.md        # Icon library reference
+│   ├── Complete-Style-Reference-Guide.md
+│   └── ENV-TEMPLATE.md          # Environment setup
+│
+└── scripts/                     # Installation scripts
+    ├── cli-install.sh           # CLI setup script
+    └── new-examples-jan.sh      # Example generator
 ```
 
-### API Credits Error
+## 📚 Documentation
 
-1. Go to https://console.anthropic.com/settings/billing
-2. Add payment method
-3. Purchase credits ($20 recommended)
+### Getting Started
+- [CLI Quick Start](./cli/README.md#quick-start)
+- [API Quick Start](./api/README.md#quick-start)
+- [Installation Guide](./scripts/README.md)
 
-### Icon Import Errors
+### References
+- [Complete Examples](./docs/examples.md)
+- [Style Reference Guide](./docs/Complete-Style-Reference-Guide.md)
+- [Icon Reference](./docs/icon-reference.md)
+- [Environment Setup](./docs/ENV-TEMPLATE.md)
 
-Common fixes:
-- `Fluentd` → Use `FluentBit`
-- `Tekton` → Use `GithubActions`
-- `Podman` → Use `Docker`
+### Advanced Topics
+- [Template Creation](./docs/examples.md#custom-templates)
+- [API Integration](./api/README.md#api-integration)
+- [Publishing Workflows](./cli/README.md#publishing)
 
-Edit `.temp-ai-diagrams/diagram.py` and run:
+## 🎯 Use Cases
+
+### Cloud Infrastructure
+- Design cloud landing zones
+- Document microservices architectures
+- Create disaster recovery plans
+- Visualize network topologies
+
+### Enterprise Architecture
+- C4 model diagrams for software systems
+- UML class and sequence diagrams
+- ArchiMate enterprise views
+- TOGAF architecture layers
+
+### DevOps & SRE
+- Kubernetes cluster diagrams
+- CI/CD pipeline visualization
+- Observability stack documentation
+- Infrastructure as Code diagrams
+
+### Security & Compliance
+- Zero trust architecture designs
+- Data flow diagrams
+- Customer Managed Keys (CMK) documentation
+- Compliance architecture views
+
+## 🔧 Installation
+
+### Prerequisites
+- Node.js 18+ ([Download](https://nodejs.org))
+- Python 3.8+ ([Download](https://python.org)) - for Python diagram styles
+- Graphviz ([Download](https://graphviz.org/download/)) - for Python diagram styles
+- MongoDB 5+ (optional, only for API)
+- Anthropic API Key ([Get one](https://console.anthropic.com))
+
+### Quick Install
+
+**CLI Only:**
 ```bash
-node ai-diagram.js regenerate --open
+git clone https://github.com/Cloudstrucc/programmatic-diagram-generator.git
+cd programmatic-diagram-generator
+./scripts/cli-install.sh
 ```
 
-## What Changed in v6.1?
-
-**✅ Added:**
-- Draw.io style for editable XML diagrams
-- All templates compatible with draw.io
-
-**✅ Kept (100% intact):**
-- All 40+ original templates
-- All 17+ Python diagram styles
-- All cloud providers (Azure, AWS, GCP, Alibaba, IBM, OCI, etc.)
-- All enterprise architecture (UML, ArchiMate, C4, TOGAF)
-- Publishing to GitHub, Azure DevOps, local
-- Preview, regenerate, quality presets
-- Smart description enhancement
-
-**Usage:**
+**API Only:**
 ```bash
-# Before (v6.0 - still works!)
-node ai-diagram.js generate --template m365-cmk --style azure
-
-# New (v6.1 - draw.io option!)
-node ai-diagram.js generate --template m365-cmk --style drawio
+git clone https://github.com/Cloudstrucc/programmatic-diagram-generator.git
+cd programmatic-diagram-generator/api
+npm install
+cp .env.example .env
+# Edit .env with your ANTHROPIC_API_KEY
+docker-compose up -d
 ```
 
-## Examples Gallery
-
+**Both:**
 ```bash
-# M365 CMK as draw.io
-node ai-diagram.js generate --template m365-cmk --style drawio --open
+git clone https://github.com/Cloudstrucc/programmatic-diagram-generator.git
+cd programmatic-diagram-generator
 
-# AWS serverless as draw.io
-node ai-diagram.js generate --template aws-serverless --style drawio --open
+# Install CLI
+./scripts/cli-install.sh
 
-# K8s microservices as draw.io
-node ai-diagram.js generate --template k8s-microservices --style drawio --open
-
-# UML class diagram
-node ai-diagram.js generate "e-commerce system" --style uml --open
-
-# ArchiMate enterprise architecture
-node ai-diagram.js generate --template archimate-layered --style archimate --open
+# Install API
+cd api
+npm install
+cp .env.example .env
+docker-compose up -d
 ```
 
-## License
+## ⚙️ Configuration
 
-MIT License
+### CLI Configuration
 
-## Acknowledgments
+Create `cli/.env`:
+```bash
+ANTHROPIC_API_KEY=sk-ant-your-key-here
+ANTHROPIC_MODEL=claude-sonnet-4-5-20250929
+DIAGRAM_OUTPUT_DIR=./.temp-ai-diagrams
+```
 
-- [Anthropic Claude](https://www.anthropic.com/)
-- [Python Diagrams](https://diagrams.mingrammer.com/)
-- [Draw.io](https://www.diagrams.net/)
-- [Graphviz](https://graphviz.org/)
+### API Configuration
+
+Create `api/.env`:
+```bash
+# Required
+ANTHROPIC_API_KEY=sk-ant-your-key-here
+JWT_SECRET=your-super-secret-key
+
+# Database
+MONGODB_URI=mongodb://localhost:27017/diagram-api
+
+# Server
+PORT=3000
+NODE_ENV=development
+
+# Rate Limits
+RATE_LIMIT_FREE=10
+RATE_LIMIT_BASIC=100
+RATE_LIMIT_PRO=500
+RATE_LIMIT_ENTERPRISE=5000
+```
+
+[➡️ Complete Configuration Guide](./docs/ENV-TEMPLATE.md)
+
+## 🧪 Testing
+
+### Test CLI
+```bash
+cd cli
+node ai-diagram.js generate "test web server" --style azure
+ls -la .temp-ai-diagrams/
+```
+
+### Test API
+```bash
+cd api
+npm start
+# In another terminal:
+curl http://localhost:3000/api/health
+```
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**"Cannot find module 'dotenv'"**
+```bash
+cd cli  # or cd api
+npm install
+```
+
+**"Python module 'diagrams' not found"**
+```bash
+pip3 install diagrams graphviz anthropic
+```
+
+**"Graphviz not found"**
+```bash
+# macOS
+brew install graphviz
+
+# Ubuntu/Debian
+sudo apt-get install graphviz
+```
+
+**"ANTHROPIC_API_KEY not set"**
+```bash
+export ANTHROPIC_API_KEY="sk-ant-your-key"
+# Or add to .env file
+```
+
+**"MongoDB connection failed"**
+```bash
+# Start MongoDB with Docker
+docker run -d -p 27017:27017 --name mongodb mongo:latest
+```
+
+[➡️ Full Troubleshooting Guide](./docs/troubleshooting.md)
+
+## 🤝 Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](./docs/CONTRIBUTING.md) for guidelines.
+
+### Development Setup
+
+```bash
+# Fork and clone the repository
+git clone https://github.com/YOUR_USERNAME/programmatic-diagram-generator.git
+cd programmatic-diagram-generator
+
+# Create a feature branch
+git checkout -b feature/your-feature-name
+
+# Make your changes and test
+cd cli && npm test
+cd ../api && npm test
+
+# Commit and push
+git commit -m "Add your feature"
+git push origin feature/your-feature-name
+
+# Open a Pull Request
+```
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 💬 Support
+
+- **Issues**: [GitHub Issues](https://github.com/Cloudstrucc/programmatic-diagram-generator/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/Cloudstrucc/programmatic-diagram-generator/discussions)
+- **Email**: support@cloudstrucc.com
+- **Documentation**: [Full Docs](./docs/)
+
+## 🙏 Acknowledgments
+
+- Built with [Anthropic Claude](https://www.anthropic.com) Sonnet 4.5
+- Draw.io templates powered by [diagrams.net](https://www.diagrams.net)
+- Python diagrams using [diagrams library](https://diagrams.mingrammer.com)
+- Cloud provider icons from official sources
+
+## 🌟 Star History
+
+If you find this project useful, please consider giving it a star ⭐
+
+## 📊 Statistics
+
+- **40+ Templates** covering Azure, AWS, GCP, Kubernetes, and Enterprise Architecture
+- **18+ Icon Styles** including all major cloud providers and frameworks
+- **3 Quality Levels** for different use cases (5-8, 8-15, 15+ components)
+- **2 Output Formats** (PNG and editable Draw.io XML)
+- **Production Ready** with Docker support, authentication, and rate limiting
+
+---
+
+**Built with ❤️ by [CloudStrucc](https://cloudstrucc.com)**
