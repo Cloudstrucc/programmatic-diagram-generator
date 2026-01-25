@@ -8,13 +8,14 @@ package-lock.json
 .env
 .env.local
 .env.*.local
+*.env
 
 # Production builds
-/dist
-/build
+dist/
+build/
 
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -33,7 +34,7 @@ diagrams/
 *.drawio
 *.py
 
-# OS
+# OS files
 .DS_Store
 .DS_Store?
 ._*
@@ -41,29 +42,41 @@ diagrams/
 .Trashes
 ehthumbs.db
 Thumbs.db
+*.swp
+*.swo
+*~
 
 # IDE
 .vscode/
 .idea/
-*.swp
-*.swo
-*~
+*.sublime-project
+*.sublime-workspace
 
 # Testing
 coverage/
 .nyc_output
 
 # Misc
-*.tgz
 .npm
 .eslintcache
 .node_repl_history
 .yarn-integrity
+*.tgz
 
-# MongoDB data (if local)
+# MongoDB data
 data/db/
 
-# JWT tokens (security)
+# Security
 .jwt-token
 *.pem
 *.key
+*.cert
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+env/
+venv/
+ENV/
