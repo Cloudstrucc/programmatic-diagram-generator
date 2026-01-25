@@ -1,189 +1,86 @@
 # AI Diagram Generator API
 
-Production-ready Node.js API server for AI-powered diagram generation with intelligent queue management, rate limiting, and multi-format support (Draw.io XML + Python PNG diagrams).
+Production-ready REST API server for AI-powered diagram generation with intelligent queue management, rate limiting, and dual-format support (Draw.io XML + Python PNG diagrams).
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org)
+[![MongoDB](https://img.shields.io/badge/MongoDB-5%2B-green)](https://www.mongodb.com)
 
 ## 🚀 Features
 
-- **Dual Diagram Formats**: 
-  - Draw.io XML (editable, collaborative diagrams)
-  - Python diagrams (PNG images with official cloud icons)
-- **Intelligent Queue Management**: Priority-based processing with automatic retries
-- **Rate Limiting**: Per-user and global limits with subscription tiers
-- **Real-time Updates**: WebSocket support for live status notifications
-- **Professional Templates**: 40+ built-in templates (AWS, Azure, GCP, K8s, etc.)
-- **17+ Icon Styles**: Azure, AWS, GCP, Kubernetes, C4, UML, ArchiMate, and more
-- **Usage Tracking**: Token counting and cost estimation
-- **Production Ready**: Database persistence, error handling, monitoring
+### Dual Diagram Formats
+- **Draw.io XML** - Editable diagrams for collaboration
+- **Python PNG** - High-quality images with official cloud provider icons
 
-## 📋 Prerequisites
+### Enterprise-Ready
+- ✅ **Intelligent Queue Management** - Priority-based processing with automatic retries
+- ✅ **Multi-Tier Rate Limiting** - Free, Basic, Pro, Enterprise subscription tiers
+- ✅ **Real-time Updates** - WebSocket support for live status notifications
+- ✅ **Usage Tracking** - Token counting and cost estimation
+- ✅ **JWT Authentication** - Secure API key management
+- ✅ **Database Persistence** - MongoDB for reliability
+- ✅ **Docker Support** - Easy deployment with Docker Compose
 
-- **Node.js** 18+ ([Download](https://nodejs.org))
-- **MongoDB** 5+ ([Download](https://www.mongodb.com/try/download/community) or use Docker)
-- **Python** 3.8+ (for Python diagrams)
-- **Anthropic API Key** ([Get one](https://console.anthropic.com))
+### Comprehensive Template Library
+- **40+ Built-in Templates** - AWS, Azure, GCP, Kubernetes, Enterprise Architecture
+- **18+ Icon Styles** - All major cloud providers and frameworks
+- **3 Quality Levels** - Simple, Standard, Enterprise detail levels
 
-### Optional
-- **Redis** (for distributed caching)
-- **Docker** (for containerized deployment)
+## 📋 Table of Contents
+
+- [Quick Start](#-quick-start)
+- [API Endpoints](#-api-endpoints)
+- [Diagram Types](#-diagram-types)
+- [Subscription Tiers](#-subscription-tiers)
+- [Architecture](#-architecture)
+- [Configuration](#-configuration)
+- [Docker Deployment](#-docker-deployment)
+- [Troubleshooting](#-troubleshooting)
 
 ## ⚡ Quick Start
 
-### 1. Clone the Repository
+### Prerequisites
+
+- **Node.js** 18+ ([Download](https://nodejs.org))
+- **MongoDB** 5+ ([Download](https://www.mongodb.com/try/download/community) or use Docker)
+- **Python** 3.8+ (for Python diagram generation)
+- **Graphviz** (for Python diagrams): `brew install graphviz`
+- **Anthropic API Key** ([Get one](https://console.anthropic.com))
+
+### Installation
 
 ```bash
-git clone https://github.com/Cloudstrucc/programmatic-diagram-generator.git
-cd programmatic-diagram-generator/webapp/diagram-api
-```
+# 1. Navigate to API directory
+cd programmatic-diagram-generator/api
 
-### 2. Install Dependencies
+# 2. Run setup script
+./scripts/setup.sh
 
-```bash
-npm install
-```
-
-### 3. Install Python Dependencies
-
-```bash
-# Install diagrams library for Python diagram generation
-pip install diagrams graphviz --break-system-packages
-
-# Verify installation
-python3 -c "from diagrams import Diagram; print('✓ Python diagrams installed')"
-```
-
-### 4. Configure Environment
-
-```bash
-# Copy example environment file
+# 3. Configure environment
 cp .env.example .env
+nano .env  # Add your ANTHROPIC_API_KEY
 
-# Edit with your credentials
-nano .env
-```
-
-Add your Anthropic API key:
-```bash
-ANTHROPIC_API_KEY=sk-ant-api03-your-actual-key-here
-JWT_SECRET=your-super-secret-jwt-key-change-in-production
-MONGODB_URI=mongodb://localhost:27017/diagram-api
-```
-
-### 5. Start MongoDB
-
-**Option A: Using Docker (Recommended)**
-```bash
+# 4. Start MongoDB
 docker run -d -p 27017:27017 --name mongodb mongo:latest
-```
 
-**Option B: Using Homebrew (macOS)**
-```bash
-brew services start mongodb-community
-```
+# 5. Install Python dependencies
+pip3 install diagrams graphviz anthropic --break-system-packages
 
-**Option C: Existing MongoDB**
-```bash
-# Update MONGODB_URI in .env with your connection string
-```
-
-### 6. Start the Server
-
-```bash
-# Development mode (with auto-reload)
-npm run dev
-
-# Production mode
+# 6. Start server
 npm start
 ```
 
-**Expected output:**
-```
-✓ Database connected
-✓ Database indexes created
-✓ Usage tracker initialized
-✓ Queue manager initialized
-✓ Draw.io template engine initialized
-✓ Python diagram generator initialized
-✓ Server running on port 3000
-WebSocket: ws://localhost:3000
-```
-
-### 7. Generate a JWT Token
+### Generate JWT Token
 
 ```bash
-# Generate a test token
-node generate-token-now.js
+# Generate test token
+node scripts/generate-jwt.js > .jwt-token
 
-# Save it for testing
-echo "YOUR_TOKEN_HERE" > .jwt-token
-```
-
-### 8. Test the API
-
-```bash
-# Health check
+# Test the API
 curl http://localhost:3000/health
-
-# Get templates
-curl http://localhost:3000/api/diagram/templates \
-  -H "Authorization: Bearer $(cat .jwt-token)"
-
-# Generate a Draw.io diagram
-curl -X POST http://localhost:3000/api/diagram/generate \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $(cat .jwt-token)" \
-  -d '{
-    "prompt": "3-tier web application with load balancer",
-    "diagramType": "drawio",
-    "templateType": "aws"
-  }'
 ```
 
-## 🧪 Running Tests
-
-### Complete Test Suite
-
-```bash
-# Run all tests
-./test-api.sh
-```
-
-### Individual API Tests
-
-```bash
-# Test Draw.io diagram generation
-curl -X POST http://localhost:3000/api/diagram/generate \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $(cat .jwt-token)" \
-  -d '{
-    "prompt": "Azure AKS cluster with SQL database",
-    "diagramType": "drawio",
-    "templateType": "azure"
-  }'
-
-# Test Python diagram generation
-curl -X POST http://localhost:3000/api/diagram/generate \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $(cat .jwt-token)" \
-  -d '{
-    "prompt": "Kubernetes cluster with monitoring",
-    "diagramType": "python",
-    "style": "k8s",
-    "quality": "enterprise"
-  }'
-
-# Get Python styles
-curl http://localhost:3000/api/diagram/python/styles \
-  -H "Authorization: Bearer $(cat .jwt-token)"
-
-# Get Python templates
-curl http://localhost:3000/api/diagram/python/templates \
-  -H "Authorization: Bearer $(cat .jwt-token)"
-```
-
-## 📚 API Documentation
+## 📚 API Endpoints
 
 ### Base URL
 ```
@@ -191,14 +88,14 @@ http://localhost:3000/api/diagram
 ```
 
 ### Authentication
-All endpoints require JWT authentication:
+All endpoints require JWT token:
 ```bash
 Authorization: Bearer YOUR_JWT_TOKEN
 ```
 
-### Endpoints
+### Core Endpoints
 
-#### Generate Diagram
+#### 1. Generate Diagram
 ```http
 POST /api/diagram/generate
 ```
@@ -206,7 +103,7 @@ POST /api/diagram/generate
 **Draw.io Request:**
 ```json
 {
-  "prompt": "Your architecture description",
+  "prompt": "3-tier web application with load balancer",
   "diagramType": "drawio",
   "templateType": "aws|azure|gcp|kubernetes|network|flowchart|uml"
 }
@@ -215,36 +112,239 @@ POST /api/diagram/generate
 **Python Diagram Request:**
 ```json
 {
-  "prompt": "Your architecture description",
+  "prompt": "Azure AKS cluster with SQL database",
   "diagramType": "python",
-  "style": "azure|aws|gcp|k8s|generic",
+  "style": "azure|aws|gcp|k8s|generic|c4|uml",
   "quality": "simple|standard|enterprise",
   "outputFormat": "png"
 }
 ```
 
-#### Check Status
+**Using Templates:**
+```json
+{
+  "template": "m365-cmk",
+  "diagramType": "python",
+  "style": "azure",
+  "quality": "enterprise"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "requestId": "req_abc123",
+  "status": "queued",
+  "position": 1,
+  "estimatedWaitTime": 5000
+}
+```
+
+#### 2. Check Status
 ```http
 GET /api/diagram/status/:requestId
 ```
 
-#### Get Templates
+**Response (Completed):**
+```json
+{
+  "requestId": "req_abc123",
+  "status": "completed",
+  "result": {
+    "type": "python",
+    "format": "png",
+    "imageData": "base64-encoded-data...",
+    "fileName": "diagram_abc123.png",
+    "tokensUsed": 5000
+  }
+}
+```
+
+#### 3. Get Templates
 ```http
 GET /api/diagram/templates
 GET /api/diagram/python/styles
 GET /api/diagram/python/templates
 ```
 
-#### Usage Statistics
+#### 4. Usage Statistics
 ```http
 GET /api/diagram/usage?timeWindow=day|week|month
 ```
 
-## 🔧 Configuration
+**Response:**
+```json
+{
+  "period": "day",
+  "totalRequests": 42,
+  "totalTokens": 180000,
+  "estimatedCost": 0.72,
+  "byDiagramType": {
+    "drawio": 20,
+    "python": 22
+  }
+}
+```
 
-### Subscription Tiers
+#### 5. Cancel Request
+```http
+DELETE /api/diagram/cancel/:requestId
+```
 
-Edit `config.js` to customize tier limits:
+#### 6. Health Check (No Auth)
+```http
+GET /health
+```
+
+**Response:**
+```json
+{
+  "status": "healthy",
+  "timestamp": "2026-01-25T20:00:00Z",
+  "queue": {
+    "length": 3,
+    "processing": true
+  }
+}
+```
+
+## 🎨 Diagram Types
+
+### Draw.io Templates (8 types)
+
+| Template | Description | Best For |
+|----------|-------------|----------|
+| `aws` | Amazon Web Services | AWS architectures |
+| `azure` | Microsoft Azure | Azure cloud solutions |
+| `gcp` | Google Cloud Platform | GCP infrastructures |
+| `kubernetes` | Container orchestration | K8s clusters |
+| `network` | Network topology | Network diagrams |
+| `infrastructure` | Datacenter layouts | Infrastructure |
+| `flowchart` | Process flows | Workflows |
+| `uml` | Software design | Class/sequence diagrams |
+
+### Python Diagram Styles (18+ types)
+
+**Cloud Providers:**
+- `azure` - Microsoft Azure (50+ services)
+- `aws` - Amazon Web Services (60+ services)
+- `gcp` - Google Cloud Platform (40+ services)
+- `alibabacloud`, `ibm`, `oci`, `digitalocean`, `openstack`, `outscale`
+
+**Container & DevOps:**
+- `k8s` - Kubernetes
+- `generic` - Generic/Open Source
+
+**Enterprise Architecture:**
+- `c4` - C4 Model
+- `uml` - UML 2.0 diagrams
+- `archimate` - ArchiMate framework
+- `enterprise` - TOGAF layers
+
+**Specialized:**
+- `elastic` - Elastic Stack
+- `firebase` - Firebase services
+
+### Quality Levels
+
+| Level | Nodes | Detail | Use Case |
+|-------|-------|--------|----------|
+| `simple` | 5-8 | Minimal | Quick concepts, internal docs |
+| `standard` | 8-15 | Balanced | Team presentations, documentation |
+| `enterprise` | 15+ | Comprehensive | Client presentations, compliance |
+
+## 💳 Subscription Tiers
+
+| Tier | Requests/Day | Tokens/Day | Concurrent | Use Case |
+|------|-------------|-----------|------------|----------|
+| **Free** | 10 | 100K | 1 | Testing, personal |
+| **Basic** | 100 | 1M | 2 | Small teams |
+| **Pro** | 500 | 5M | 5 | Medium teams |
+| **Enterprise** | 5000 | 50M | 20 | Large organizations |
+
+### Rate Limiting
+
+**User Limits:**
+- Per-day request quotas
+- Per-hour token limits
+- Concurrent request limits
+
+**Global Limits (20x Plan):**
+- 100 requests/minute
+- 800K tokens/minute
+
+## 🏗️ Architecture
+
+```
+┌─────────────┐
+│   Clients   │
+│ (Web/Mobile)│
+└──────┬──────┘
+       │
+       ▼
+┌─────────────────────┐
+│   Express Server    │
+│  + WebSocket Server │
+└──────┬──────────────┘
+       │
+       ├──────▶ Auth Middleware (JWT)
+       │
+       ├──────▶ Rate Limiter
+       │
+       ▼
+┌─────────────────────┐
+│   Queue Manager     │
+│  (Priority-based)   │
+└──────┬──────────────┘
+       │
+       ├──────▶ Usage Tracker
+       │
+       ▼
+┌─────────────────────┐
+│  Request Processor  │
+│  (Draw.io/Python)   │
+└──────┬──────────────┘
+       │
+       ├──────▶ MongoDB (Persistence)
+       ├──────▶ Redis (Caching)
+       └──────▶ Anthropic API
+```
+
+[View Detailed Architecture](./docs/ARCHITECTURE.md)
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+Create `.env` file:
+
+```bash
+# Required
+ANTHROPIC_API_KEY=sk-ant-api03-your-key-here
+JWT_SECRET=your-super-secret-jwt-key-change-in-production
+
+# Database
+MONGODB_URI=mongodb://localhost:27017/diagram-api
+
+# Server
+PORT=3000
+NODE_ENV=development
+
+# Optional - Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# Rate Limits (requests per day)
+RATE_LIMIT_FREE=10
+RATE_LIMIT_BASIC=100
+RATE_LIMIT_PRO=500
+RATE_LIMIT_ENTERPRISE=5000
+```
+
+### Customizing Tiers
+
+Edit `config.js`:
 
 ```javascript
 rateLimits: {
@@ -252,31 +352,11 @@ rateLimits: {
     free: {
       requestsPerDay: 10,
       tokensPerDay: 100000,
+      requestsPerHour: 5,
+      concurrentRequests: 1
     },
-    basic: {
-      requestsPerDay: 100,
-      tokensPerDay: 1000000,
-    },
-    pro: {
-      requestsPerDay: 500,
-      tokensPerDay: 5000000,
-    },
-    enterprise: {
-      requestsPerDay: 5000,
-      tokensPerDay: 50000000,
-    },
-  },
-}
-```
-
-### Anthropic Rate Limits
-
-For 20x plan (default):
-```javascript
-queue: {
-  maxQueueSize: 100,
-  maxRetries: 3,
-  requestTimeout: 120000, // 2 minutes
+    // ... customize other tiers
+  }
 }
 ```
 
@@ -288,54 +368,108 @@ queue: {
 # Build and start all services
 docker-compose up -d
 
+# Services started:
+# - MongoDB (port 27017)
+# - Redis (port 6379)  
+# - API Server (port 3000)
+
 # View logs
 docker-compose logs -f api
 
 # Stop services
 docker-compose down
+
+# Remove volumes
+docker-compose down -v
 ```
 
-Services started:
-- MongoDB (port 27017)
-- Redis (port 6379)
-- API Server (port 3000)
+### Docker Compose Configuration
 
-## 📊 Available Diagram Types
+```yaml
+services:
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
 
-### Draw.io Templates (8 types)
-- **aws** - Amazon Web Services
-- **azure** - Microsoft Azure
-- **gcp** - Google Cloud Platform
-- **kubernetes** - Container orchestration
-- **network** - Network topology
-- **infrastructure** - Datacenter layouts
-- **flowchart** - Process flows
-- **uml** - Software design
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
 
-### Python Diagram Styles (17+ types)
-- **Cloud**: azure, aws, gcp, alibabacloud, ibm, oci, digitalocean, openstack
-- **Containers**: k8s, generic
-- **Enterprise**: c4, uml, archimate, enterprise
-- **Specialized**: elastic, firebase
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongodb
+      - redis
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+```
 
-### Quality Levels
-- **simple** - 5-8 nodes, minimal detail
-- **standard** - 8-15 nodes, balanced detail
-- **enterprise** - 15+ nodes, comprehensive coverage
+## 🧪 Testing
+
+### Run Test Suite
+
+```bash
+# Complete test suite
+./scripts/test-api.sh
+```
+
+### Manual Tests
+
+```bash
+# 1. Generate Draw.io diagram
+curl -X POST http://localhost:3000/api/diagram/generate \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $(cat .jwt-token)" \
+  -d '{
+    "prompt": "3-tier web application",
+    "diagramType": "drawio",
+    "templateType": "aws"
+  }'
+
+# 2. Generate Python diagram
+curl -X POST http://localhost:3000/api/diagram/generate \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $(cat .jwt-token)" \
+  -d '{
+    "prompt": "Azure AKS cluster with monitoring",
+    "diagramType": "python",
+    "style": "azure",
+    "quality": "enterprise"
+  }'
+
+# 3. Get status (use requestId from above)
+curl http://localhost:3000/api/diagram/status/req_abc123 \
+  -H "Authorization: Bearer $(cat .jwt-token)"
+
+# 4. Get templates
+curl http://localhost:3000/api/diagram/python/templates \
+  -H "Authorization: Bearer $(cat .jwt-token)"
+
+# 5. Check usage
+curl http://localhost:3000/api/diagram/usage \
+  -H "Authorization: Bearer $(cat .jwt-token)"
+```
 
 ## 📁 Project Structure
 
 ```
-diagram-api/
+api/
 ├── server.js                 # Main application
 ├── config.js                 # Configuration
 ├── package.json              # Dependencies
-├── .env                      # Environment variables (gitignored)
 ├── .env.example              # Environment template
+├── docker-compose.yml        # Docker setup
 │
 ├── services/
 │   ├── queueManager.js       # Request queue & processing
-│   ├── usageTracker.js       # Usage tracking
+│   ├── usageTracker.js       # Usage tracking & limits
 │   ├── drawioTemplates.js    # Draw.io template engine
 │   └── pythonDiagramGenerator.js  # Python diagram integration
 │
@@ -345,73 +479,50 @@ diagram-api/
 ├── middleware/
 │   └── auth.js               # Authentication & rate limiting
 │
-└── diagrams/                 # Generated diagrams (created at runtime)
+├── scripts/
+│   ├── setup.sh              # Setup script
+│   ├── generate-jwt.js       # Token generator
+│   ├── test-api.sh           # Test suite
+│   └── README.md             # Scripts documentation
+│
+└── docs/
+    ├── ARCHITECTURE.md       # System architecture
+    └── Python-diagram-integration.md  # Integration guide
 ```
-
-## 🔐 Security Best Practices
-
-- ✅ Change `JWT_SECRET` in production
-- ✅ Use HTTPS in production
-- ✅ Rotate API keys regularly
-- ✅ Enable CORS only for trusted origins
-- ✅ Use MongoDB Atlas or managed database
-- ✅ Enable Redis for distributed caching
-- ✅ Set up monitoring and alerting
-- ✅ Implement rate limiting per IP
-- ✅ Keep dependencies updated
-
-## 🚀 Production Deployment
-
-### Environment Variables
-```bash
-# Required
-ANTHROPIC_API_KEY=sk-ant-...
-JWT_SECRET=production-secret-key
-MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/diagram-api
-
-# Optional
-REDIS_HOST=redis.example.com
-REDIS_PORT=6379
-PORT=3000
-NODE_ENV=production
-LOG_LEVEL=info
-```
-
-### Scaling Checklist
-- [ ] Deploy to cloud (AWS, GCP, Azure)
-- [ ] Use managed MongoDB (Atlas)
-- [ ] Enable Redis cluster
-- [ ] Set up load balancer
-- [ ] Configure auto-scaling
-- [ ] Add APM monitoring
-- [ ] Set up log aggregation
-- [ ] Implement health checks
-- [ ] Configure SSL/TLS
-- [ ] Set up CI/CD pipeline
 
 ## 🐛 Troubleshooting
 
 ### MongoDB Connection Failed
+
 ```bash
 # Check if MongoDB is running
 docker ps | grep mongodb
 
 # Restart MongoDB
-brew services restart mongodb-community
-# OR
 docker restart mongodb
+# OR
+docker run -d -p 27017:27017 --name mongodb mongo:latest
+
+# Check connection string in .env
+cat .env | grep MONGODB_URI
 ```
 
 ### Python Diagrams Not Working
+
 ```bash
 # Install dependencies
-pip install diagrams graphviz --break-system-packages
+pip3 install diagrams graphviz anthropic --break-system-packages
+
+# Install Graphviz
+brew install graphviz  # macOS
+sudo apt-get install graphviz  # Ubuntu
 
 # Verify installation
-python3 -c "from diagrams import Diagram; print('OK')"
+python3 -c "from diagrams import Diagram; print('✓ OK')"
 ```
 
 ### Port Already in Use
+
 ```bash
 # Kill process on port 3000
 lsof -ti:3000 | xargs kill -9
@@ -421,35 +532,198 @@ npm start
 ```
 
 ### Queue Not Processing
+
 ```bash
 # Check queue status
 curl http://localhost:3000/api/diagram/queue/status \
   -H "Authorization: Bearer $(cat .jwt-token)"
 
 # Restart server
-lsof -ti:3000 | xargs kill -9
-npm start
+npm run dev
 ```
 
-## 📖 Additional Resources
+### Invalid JWT Token
 
-- [API Documentation](./docs/API.md)
-- [Draw.io Templates Guide](./docs/DRAWIO_TEMPLATES.md)
-- [Python Diagram Styles](./docs/PYTHON_STYLES.md)
-- [Integration Guide](./docs/INTEGRATION-PATCH.md)
-- [Architecture Diagrams](./docs/ARCHITECTURE.md)
+```bash
+# Generate fresh token
+node scripts/generate-jwt.js > .jwt-token
 
-## 🤝 Contributing
+# Verify JWT_SECRET matches between .env and server
+grep JWT_SECRET .env
+```
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests
-5. Submit a pull request
+### Rate Limit Exceeded
+
+```bash
+# Check usage
+curl http://localhost:3000/api/diagram/usage \
+  -H "Authorization: Bearer $(cat .jwt-token)"
+
+# Generate token with higher tier
+node scripts/generate-jwt.js my-key pro > .jwt-token
+```
+
+## 🚀 Production Deployment
+
+### Pre-deployment Checklist
+
+- [ ] Change `JWT_SECRET` to strong random value
+- [ ] Use HTTPS/TLS for all connections
+- [ ] Set `NODE_ENV=production`
+- [ ] Use managed MongoDB (MongoDB Atlas)
+- [ ] Enable Redis cluster for caching
+- [ ] Configure load balancer
+- [ ] Set up monitoring (APM)
+- [ ] Configure log aggregation
+- [ ] Implement health checks
+- [ ] Set up auto-scaling
+- [ ] Enable CORS for trusted origins only
+- [ ] Implement IP-based rate limiting
+- [ ] Set up automated backups
+- [ ] Configure alerting
+
+### Environment Variables (Production)
+
+```bash
+NODE_ENV=production
+PORT=3000
+ANTHROPIC_API_KEY=sk-ant-production-key
+JWT_SECRET=production-secret-minimum-32-chars
+MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/diagram-api
+REDIS_HOST=redis-cluster.example.com
+REDIS_PORT=6379
+LOG_LEVEL=info
+CORS_ORIGIN=https://yourdomain.com
+```
+
+### Scaling Considerations
+
+**Horizontal Scaling:**
+- Deploy multiple API server instances
+- Use load balancer (AWS ALB, Nginx)
+- Share state via MongoDB and Redis
+
+**Database:**
+- MongoDB Atlas with auto-scaling
+- Redis Cluster for distributed caching
+- Regular backups and monitoring
+
+**Monitoring:**
+- Application Performance Monitoring (APM)
+- Error tracking (Sentry, Rollbar)
+- Log aggregation (ELK, Datadog)
+- Custom metrics and alerts
+
+## 📊 Usage Examples
+
+### Complete Workflow
+
+```bash
+# 1. Setup
+./scripts/setup.sh
+nano .env  # Add API key
+
+# 2. Start dependencies
+docker-compose up -d mongodb redis
+
+# 3. Generate token
+node scripts/generate-jwt.js > .jwt-token
+
+# 4. Start server
+npm start
+
+# 5. Test endpoints
+./scripts/test-api.sh
+
+# 6. Generate diagram
+curl -X POST http://localhost:3000/api/diagram/generate \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $(cat .jwt-token)" \
+  -d '{
+    "template": "m365-cmk",
+    "diagramType": "python",
+    "style": "azure",
+    "quality": "enterprise"
+  }'
+```
+
+## 🤝 Integration Examples
+
+### JavaScript/Node.js
+
+```javascript
+const axios = require('axios');
+
+const API_URL = 'http://localhost:3000/api/diagram';
+const TOKEN = process.env.JWT_TOKEN;
+
+async function generateDiagram() {
+  const response = await axios.post(`${API_URL}/generate`, {
+    prompt: 'Azure AKS cluster',
+    diagramType: 'python',
+    style: 'azure',
+    quality: 'enterprise'
+  }, {
+    headers: { 'Authorization': `Bearer ${TOKEN}` }
+  });
+
+  const { requestId } = response.data;
+  
+  // Poll for completion
+  let status = 'queued';
+  while (status !== 'completed') {
+    await new Promise(r => setTimeout(r, 2000));
+    const statusRes = await axios.get(`${API_URL}/status/${requestId}`, {
+      headers: { 'Authorization': `Bearer ${TOKEN}` }
+    });
+    status = statusRes.data.status;
+  }
+
+  return statusRes.data.result;
+}
+```
+
+### Python
+
+```python
+import requests
+import time
+import os
+
+API_URL = 'http://localhost:3000/api/diagram'
+TOKEN = os.getenv('JWT_TOKEN')
+headers = {'Authorization': f'Bearer {TOKEN}'}
+
+# Generate diagram
+response = requests.post(f'{API_URL}/generate', json={
+    'prompt': 'AWS serverless architecture',
+    'diagramType': 'python',
+    'style': 'aws',
+    'quality': 'standard'
+}, headers=headers)
+
+request_id = response.json()['requestId']
+
+# Poll for completion
+while True:
+    status_res = requests.get(f'{API_URL}/status/{request_id}', headers=headers)
+    status = status_res.json()['status']
+    
+    if status == 'completed':
+        result = status_res.json()['result']
+        break
+    
+    time.sleep(2)
+
+# Save image
+import base64
+with open('diagram.png', 'wb') as f:
+    f.write(base64.b64decode(result['imageData']))
+```
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file for details
+MIT License - see [LICENSE](../LICENSE) file for details.
 
 ## 💬 Support
 
@@ -459,6 +733,11 @@ MIT License - see [LICENSE](LICENSE) file for details
 
 ## 🙏 Acknowledgments
 
-- Built with [Anthropic Claude](https://www.anthropic.com)
+- Built with [Anthropic Claude](https://www.anthropic.com) Sonnet 4.5
 - Draw.io templates powered by [diagrams.net](https://www.diagrams.net)
-- Python diagrams using [diagrams](https://diagrams.mingrammer.com)
+- Python diagrams using [diagrams library](https://diagrams.mingrammer.com)
+- Cloud provider icons from official sources
+
+---
+
+**Built with ❤️ by [CloudStrucc](https://cloudstrucc.com)**
