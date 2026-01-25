@@ -1,0 +1,78 @@
+<section style="background: var(--light-bg); padding: 60px 0 80px;">
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h1>My Diagrams</h1>
+                <p class="text-muted">View and manage all your generated diagrams</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="/diagrams/generator" class="btn btn-primary-hero">
+                    <i class="bi bi-plus-circle me-2"></i>New Diagram
+                </a>
+            </div>
+        </div>
+
+        {{#if diagrams.length}}
+        <div class="row g-4">
+            {{#each diagrams}}
+            <div class="col-md-4">
+                <div class="card h-100" style="border: 2px solid #f0f0f0; border-radius: 10px;">
+                    <div class="card-body">
+                        <h5 class="card-title">{{this.title}}</h5>
+                        <p class="card-text text-muted">{{truncate this.prompt 100}}</p>
+                        <div class="mb-3">
+                            <span class="badge bg-primary">{{this.diagramType}}</span>
+                            <span class="badge bg-secondary">{{this.quality}}</span>
+                            {{#if (eq this.status 'completed')}}
+                            <span class="badge bg-success">Completed</span>
+                            {{else if (eq this.status 'generating')}}
+                            <span class="badge bg-warning">Generating...</span>
+                            {{else}}
+                            <span class="badge bg-danger">Failed</span>
+                            {{/if}}
+                        </div>
+                        <div class="d-grid gap-2">
+                            <a href="/diagrams/view/{{this._id}}" class="btn btn-primary btn-sm">View</a>
+                        </div>
+                    </div>
+                    <div class="card-footer text-muted small">
+                        {{formatDate this.createdAt}}
+                    </div>
+                </div>
+            </div>
+            {{/each}}
+        </div>
+
+        {{#if pagination}}
+        <nav class="mt-5">
+            <ul class="pagination justify-content-center">
+                {{#if pagination.hasPrev}}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{pagination.page - 1}}">Previous</a>
+                </li>
+                {{/if}}
+                
+                <li class="page-item active">
+                    <span class="page-link">{{pagination.page}}</span>
+                </li>
+                
+                {{#if pagination.hasNext}}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{pagination.page + 1}}">Next</a>
+                </li>
+                {{/if}}
+            </ul>
+        </nav>
+        {{/if}}
+        {{else}}
+        <div class="text-center py-5">
+            <i class="bi bi-inbox" style="font-size: 5rem; color: #ccc;"></i>
+            <h3 class="mt-4">No diagrams yet</h3>
+            <p class="text-muted">Create your first diagram to get started</p>
+            <a href="/diagrams/generator" class="btn btn-primary-hero mt-3">
+                <i class="bi bi-plus-circle me-2"></i>Generate Diagram
+            </a>
+        </div>
+        {{/if}}
+    </div>
+</section>

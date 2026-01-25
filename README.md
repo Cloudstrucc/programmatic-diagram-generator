@@ -471,4 +471,4 @@ If you find this project useful, please consider giving it a star ⭐
 
 ---
 
-**Built with ❤️ by [CloudStrucc](https://cloudstrucc.com)**
+**Built with ❤️ by [Cloudstrucc](https://cloudstrucc.com)**

@@ -831,4 +831,4 @@ MIT License - see [LICENSE](../LICENSE) file for details.
 
 ---
 
-**Built with ❤️ by [CloudStrucc](https://cloudstrucc.com)**
+**Built with ❤️ by [Cloudstrucc](https://cloudstrucc.com)**

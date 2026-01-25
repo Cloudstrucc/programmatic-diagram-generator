@@ -1,0 +1,23 @@
+# Server Configuration
+PORT=3001
+NODE_ENV=development
+
+# MongoDB
+MONGODB_URI=mongodb://localhost:27017/diagram-generator-web
+
+# Session
+SESSION_SECRET=your-super-secret-session-key-change-in-production
+
+# API Configuration
+API_URL=http://localhost:3000
+API_JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+
+# Email (Optional - for future features)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASS=your-email-password
+EMAIL_FROM=noreply@cloudstrucc.com
+
+# Cloudstrucc Website
+CLOUDSTRUCC_URL=https://www.cloudstrucc.com
