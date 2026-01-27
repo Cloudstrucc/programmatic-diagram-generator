@@ -12,13 +12,34 @@
             </div>
         </div>
 
+        <!-- Download Buttons -->
+        {{#if (eq diagram.status 'completed')}}
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="btn-group" role="group">
+                    {{#if diagram.imageData}}
+                    <button class="btn btn-primary" onclick="downloadPNG()">
+                        <i class="bi bi-download me-2"></i>Download PNG
+                    </button>
+                    <button class="btn btn-outline-primary" onclick="convertToSVG()">
+                        <i class="bi bi-download me-2"></i>Download SVG
+                    </button>
+                    {{/if}}
+                    <button class="btn btn-outline-primary" onclick="downloadDrawIO()">
+                        <i class="bi bi-download me-2"></i>Download for Draw.io
+                    </button>
+                </div>
+            </div>
+        </div>
+        {{/if}}
+
         <div class="row">
             <div class="col-lg-9">
                 <div class="card" style="border: 2px solid #f0f0f0; border-radius: 10px;">
                     <div class="card-body p-4">
                         {{#if (eq diagram.status 'completed')}}
                             {{#if diagram.imageData}}
-                            <img src="data:image/png;base64,{{diagram.imageData}}" class="img-fluid rounded" alt="{{diagram.title}}" style="max-width: 100%;">
+                            <img id="diagramImage" src="data:image/png;base64,{{diagram.imageData}}" class="img-fluid rounded" alt="{{diagram.title}}" style="max-width: 100%;">
                             {{else if diagram.xmlData}}
                             <div class="alert alert-info">
                                 <i class="bi bi-info-circle me-2"></i>
@@ -42,7 +63,6 @@
                     </div>
                 </div>
             </div>
-
             <div class="col-lg-3">
                 <div class="card" style="border: 2px solid #f0f0f0; border-radius: 10px;">
                     <div class="card-body">
@@ -61,9 +81,93 @@
                             {{/if}}
                         </p>
                         <p><strong>Created:</strong> {{formatDate diagram.createdAt}}</p>
+                        
+                        {{#if diagram.favorite}}
+                        <button class="btn btn-sm btn-outline-warning w-100 mt-3" onclick="toggleFavorite()">
+                            <i class="bi bi-star-fill me-2"></i>Unfavorite
+                        </button>
+                        {{else}}
+                        <button class="btn btn-sm btn-outline-warning w-100 mt-3" onclick="toggleFavorite()">
+                            <i class="bi bi-star me-2"></i>Favorite
+                        </button>
+                        {{/if}}
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </section>
+
+<script>
+// Download PNG
+function downloadPNG() {
+    const imageData = '{{diagram.imageData}}';
+    const link = document.createElement('a');
+    link.href = 'data:image/png;base64,' + imageData;
+    link.download = '{{diagram.title}}.png';
+    link.click();
+}
+
+// Convert to SVG and download (basic conversion - embeds PNG in SVG)
+function convertToSVG() {
+    const imageData = '{{diagram.imageData}}';
+    const img = document.getElementById('diagramImage');
+    const width = img.naturalWidth || 1200;
+    const height = img.naturalHeight || 800;
+    
+    const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <image width="${width}" height="${height}" xlink:href="data:image/png;base64,${imageData}"/>
+</svg>`;
+    
+    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = '{{diagram.title}}.svg';
+    link.click();
+}
+
+// Download as Draw.io compatible XML
+function downloadDrawIO() {
+    const imageData = '{{diagram.imageData}}';
+    const title = '{{diagram.title}}';
+    
+    // Create Draw.io XML with embedded image
+    const drawioXML = `<mxfile host="app.diagrams.net" modified="${new Date().toISOString()}" agent="CloudStrucc" version="1.0.0">
+  <diagram name="${title}" id="cloudstrucc-diagram">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="800" background="white">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="2" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=data:image/png;base64,${imageData}" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="1200" height="800" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>`;
+    
+    const blob = new Blob([drawioXML], { type: 'application/xml' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = title + '.drawio';
+    link.click();
+}
+
+// Toggle favorite
+function toggleFavorite() {
+    fetch('/diagrams/{{diagram._id}}/favorite', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+</script>
