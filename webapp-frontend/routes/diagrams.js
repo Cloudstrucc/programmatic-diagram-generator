@@ -119,10 +119,22 @@ router.post('/generate', ensureAuthenticated, async (req, res) => {
 // Check Diagram Status (API)
 router.get('/status/:diagramId', ensureAuthenticated, async (req, res) => {
   try {
-    const diagram = await Diagram.findOne({
-      _id: req.params.diagramId,
-      user: req.user._id
-    });
+    const identifier = req.params.diagramId;
+    let diagram;
+
+    // Try to find by requestId first (e.g., req_1769...)
+    if (identifier.startsWith('req_')) {
+      diagram = await Diagram.findOne({
+        requestId: identifier,
+        user: req.user._id
+      });
+    } else {
+      // Fall back to finding by MongoDB _id
+      diagram = await Diagram.findOne({
+        _id: identifier,
+        user: req.user._id
+      });
+    }
 
     if (!diagram) {
       return res.status(404).json({ 
@@ -152,15 +164,8 @@ router.get('/status/:diagramId', ensureAuthenticated, async (req, res) => {
     if (apiStatus.status === 'completed') {
       // Update diagram with results
       diagram.status = 'completed';
-      
-      if (apiStatus.result.type === 'python') {
-        diagram.imageData = apiStatus.result.imageData;
-        diagram.fileName = apiStatus.result.fileName;
-      } else if (apiStatus.result.type === 'drawio') {
-        diagram.xmlData = apiStatus.result.xml;
-      }
-      
-      diagram.tokensUsed = apiStatus.result.tokensUsed || 0;
+      diagram.imageData = apiStatus.result;  // FIXED: Direct assignment
+      diagram.tokensUsed = apiStatus.tokensUsed || 0;
       await diagram.save();
 
       return res.json({
@@ -178,7 +183,7 @@ router.get('/status/:diagramId', ensureAuthenticated, async (req, res) => {
 
     if (apiStatus.status === 'failed') {
       diagram.status = 'failed';
-      diagram.error = apiStatus.error?.message || 'Generation failed';
+      diagram.error = apiStatus.error || 'Generation failed';
       await diagram.save();
 
       return res.json({

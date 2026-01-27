@@ -6,10 +6,10 @@ const http = require('http');
 const config = require('./config');
 const UsageTracker = require('./services/usageTracker');
 const QueueManager = require('./services/queueManager');
-const DrawioTemplateEngine = require('./services/drawioTemplates');
+// const DrawioTemplateEngine = require('./services/drawioTemplates');
 const { authenticate, authenticateApiKey, rateLimit, cors } = require('./middleware/auth');
 const diagramRoutes = require('./routes/diagram');
-const PythonDiagramGenerator = require('./services/pythonDiagramGenerator');
+// const PythonDiagramGenerator = require('./services/pythonDiagramGenerator');
 
 class DiagramAPIServer {
   constructor() {
@@ -18,7 +18,7 @@ class DiagramAPIServer {
     this.wss = new WebSocket.Server({ server: this.server });
     this.db = null;
     this.usageTracker = null;
-    this.pythonGenerator = null;
+    // this.pythonGenerator = null;
     this.queueManager = null;
     this.wsClients = new Map(); // Map requestId to WebSocket connections
   }
@@ -91,15 +91,15 @@ class DiagramAPIServer {
     console.log('✓ Queue manager initialized');
 
     // Initialize draw.io template engine
-    this.drawioEngine = new DrawioTemplateEngine();
-    console.log('✓ Draw.io template engine initialized');
+    // this.drawioEngine = new DrawioTemplateEngine();
+    // console.log('✓ Draw.io template engine initialized');
 
     // Make services available to routes
     this.app.locals.db = this.db;
     this.app.locals.config = config;
     this.app.locals.usageTracker = this.usageTracker;
     this.app.locals.queueManager = this.queueManager;
-    this.app.locals.drawioEngine = this.drawioEngine;
+    // this.app.locals.drawioEngine = this.drawioEngine;
   }
 
   /**
@@ -295,10 +295,6 @@ class DiagramAPIServer {
       // Initialize services
       await this.initServices();
 
-      // Initialize Python diagram generator
-      this.pythonGenerator = new PythonDiagramGenerator();
-      this.app.locals.pythonGenerator = this.pythonGenerator;
-      console.log('✓ Python diagram generator initialized');
       // Setup Express
       this.setupMiddleware();
       this.setupRoutes();

@@ -39,6 +39,10 @@ app.engine('hbs', engine({
   defaultLayout: 'main',
   layoutsDir: path.join(__dirname, 'views/layouts'),
   partialsDir: path.join(__dirname, 'views/partials'),
+  runtimeOptions: {
+    allowProtoPropertiesByDefault: true,
+    allowProtoMethodsByDefault: true
+  },
   helpers: {
     // Format date helper
     formatDate: (date) => {
@@ -50,6 +54,7 @@ app.engine('hbs', engine({
     },
     // Truncate text helper
     truncate: (str, length) => {
+      if (!str || typeof str !== 'string') return '';
       if (str.length > length) {
         return str.substring(0, length) + '...';
       }
@@ -84,6 +89,7 @@ app.engine('hbs', engine({
     }
   }
 }));
+
 app.set('view engine', 'hbs');
 app.set('views', path.join(__dirname, 'views'));
 

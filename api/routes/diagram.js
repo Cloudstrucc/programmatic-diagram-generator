@@ -132,24 +132,24 @@ router.post('/generate', authenticate, rateLimit('free'), async (req, res) => {
 /**
  * Get available Python diagram styles
  */
-router.get('/python/styles', authenticate, (req, res) => {
-  const styles = req.app.locals.pythonGenerator.getAvailableStyles();
-  res.json({
-    success: true,
-    styles
-  });
-});
+// router.get('/python/styles', authenticate, (req, res) => {
+//   const styles = req.app.locals.pythonGenerator.getAvailableStyles();
+//   res.json({
+//     success: true,
+//     styles
+//   });
+// });
 
 /**
  * Get available Python diagram templates
  */
-router.get('/python/templates', authenticate, (req, res) => {
-  const templates = req.app.locals.pythonGenerator.getAvailableTemplates();
-  res.json({
-    success: true,
-    templates
-  });
-});
+// router.get('/python/templates', authenticate, (req, res) => {
+//   const templates = req.app.locals.pythonGenerator.getAvailableTemplates();
+//   res.json({
+//     success: true,
+//     templates
+//   });
+// });
 
 /**
  * GET /api/diagram/status/:requestId
@@ -158,9 +158,10 @@ router.get('/python/templates', authenticate, (req, res) => {
 router.get('/status/:requestId', authenticate, async (req, res) => {
   try {
     const { requestId } = req.params;
-
+    
+    // Get status from queueManager (which checks MongoDB)
     const status = await req.app.locals.queueManager.getRequestStatus(requestId);
-
+    
     if (!status) {
       return res.status(404).json({
         error: 'NOT_FOUND',
@@ -168,48 +169,14 @@ router.get('/status/:requestId', authenticate, async (req, res) => {
       });
     }
 
-    // Get from database
-    const dbItem = await req.app.locals.db.collection(req.app.locals.config.database.queueCollection || 'queue')
-      .findOne({ requestId });
-
-    if (!dbItem) {
-      return res.status(404).json({
-        error: 'NOT_FOUND',
-        message: 'Request not found'
-      });
-    }
-
-    // Post-process draw.io results if needed
-    let result = status.result;
-    if (status.status === 'completed' && dbItem.diagramType === 'drawio' && result) {
-      const drawioEngine = req.app.locals.drawioEngine;
-      if (drawioEngine) {
-        const validation = drawioEngine.validateDrawioXML(result);
-        
-        if (!validation.valid) {
-          console.error('Invalid draw.io XML:', validation.error);
-          const xmlMatch = result.match(/```(?:xml)?\s*\n?([\s\S]*?)\n?```/);
-          if (xmlMatch) {
-            result = xmlMatch[1].trim();
-          }
-        }
-
-        if (dbItem.templateType) {
-          result = drawioEngine.postProcessDrawioXML(result, dbItem.templateType);
-        }
-      }
-    }
-
+    // Return the status
     res.json({
       requestId,
       status: status.status,
-      position: status.position,
-      result: result,
+      position: status.position || 0,
+      result: status.result,
       error: status.error,
-      completedAt: status.completedAt,
-      tokensUsed: status.tokensUsed,
-      diagramType: dbItem.diagramType,
-      templateType: dbItem.templateType
+      completedAt: status.completedAt
     });
 
   } catch (error) {

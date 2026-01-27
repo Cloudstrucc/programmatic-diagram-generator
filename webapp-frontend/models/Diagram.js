@@ -71,6 +71,10 @@ const DiagramSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  requestId: {
+    type: String,
+    index: true
+  },
   createdAt: {
     type: Date,
     default: Date.now
