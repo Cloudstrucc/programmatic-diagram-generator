@@ -2,6 +2,7 @@
 const express = require('express');
 const { engine } = require('express-handlebars');
 const session = require('express-session');
+const MongoDBStore = require('connect-mongodb-session')(session);
 const passport = require('passport');
 const flash = require('connect-flash');
 const methodOverride = require('method-override');
@@ -66,6 +67,8 @@ app.engine('hbs', engine({
     },
     // Equality helper
     eq: (a, b) => a === b,
+    // Add helper for pagination
+    add: (a, b) => a + b,
     // Conditional helper
     ifCond: (v1, operator, v2, options) => {
       switch (operator) {
@@ -93,17 +96,50 @@ app.engine('hbs', engine({
 app.set('view engine', 'hbs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Session Configuration
+// MongoDB Session Store with better logging
+console.log('📦 Creating MongoDB session store...');
+console.log('MongoDB URI:', process.env.MONGODB_URI ? 'Set ✓' : 'NOT SET ✗');
+
+const store = new MongoDBStore({
+  uri: process.env.MONGODB_URI,
+  collection: 'sessions',
+  connectionOptions: {
+    serverSelectionTimeoutMS: 10000
+  }
+});
+
+// Handle session store events
+store.on('error', function(error) {
+  console.error('❌ Session store error:', error);
+});
+
+store.on('connected', function() {
+  console.log('✓ Session store connected to MongoDB');
+});
+
+// Session Configuration with MongoDB Store
+console.log('🔐 Configuring session middleware...');
 app.use(session({
   secret: process.env.SESSION_SECRET || 'cloudstrucc-diagram-generator-secret',
   resave: false,
   saveUninitialized: false,
+  store: store,
   cookie: {
     maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production'
-  }
+    secure: false, // process.env.NODE_ENV === 'production',
+    sameSite: 'lax'
+  },
+  name: 'sessionId' // Custom name instead of default connect.sid
 }));
+
+console.log('✓ Session middleware configured');
+console.log('Session config:', {
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax',
+  name: 'sessionId',
+  maxAge: '7 days'
+});
 
 // Passport Configuration
 require('./config/passport')(passport);

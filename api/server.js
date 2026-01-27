@@ -6,10 +6,29 @@ const http = require('http');
 const config = require('./config');
 const UsageTracker = require('./services/usageTracker');
 const QueueManager = require('./services/queueManager');
-// const DrawioTemplateEngine = require('./services/drawioTemplates');
+// const DrawioTemplateEngine = require('./services/drawioTemplates'); // Not needed for Python diagrams
 const { authenticate, authenticateApiKey, rateLimit, cors } = require('./middleware/auth');
 const diagramRoutes = require('./routes/diagram');
-// const PythonDiagramGenerator = require('./services/pythonDiagramGenerator');
+// const PythonDiagramGenerator = require('./services/pythonDiagramGenerator'); // Not needed - using Python script directly
+
+// ============================================================================
+// ENVIRONMENT VARIABLE CHECK - Add this at startup
+// ============================================================================
+console.log('\n🔍 Environment Variable Check:');
+console.log('================================');
+console.log('ANTHROPIC_API_KEY:', process.env.ANTHROPIC_API_KEY ? `✓ Set (length: ${process.env.ANTHROPIC_API_KEY.length})` : '✗ NOT SET');
+console.log('MONGODB_URI:', process.env.MONGODB_URI ? '✓ Set' : '✗ NOT SET');
+console.log('JWT_SECRET:', process.env.JWT_SECRET ? '✓ Set' : '✗ NOT SET');
+console.log('NODE_ENV:', process.env.NODE_ENV || 'not set');
+console.log('================================\n');
+
+// Exit if critical variables are missing
+if (!process.env.ANTHROPIC_API_KEY) {
+  console.error('❌ CRITICAL: ANTHROPIC_API_KEY is not set!');
+  console.error('Please set it in Azure Portal: Configuration → Application settings');
+  process.exit(1);
+}
+// ============================================================================
 
 class DiagramAPIServer {
   constructor() {
@@ -18,7 +37,7 @@ class DiagramAPIServer {
     this.wss = new WebSocket.Server({ server: this.server });
     this.db = null;
     this.usageTracker = null;
-    // this.pythonGenerator = null;
+    this.pythonGenerator = null;
     this.queueManager = null;
     this.wsClients = new Map(); // Map requestId to WebSocket connections
   }
@@ -90,7 +109,7 @@ class DiagramAPIServer {
     await this.queueManager.restoreQueue();
     console.log('✓ Queue manager initialized');
 
-    // Initialize draw.io template engine
+    // Initialize draw.io template engine (commented out - not needed for Python diagrams)
     // this.drawioEngine = new DrawioTemplateEngine();
     // console.log('✓ Draw.io template engine initialized');
 
@@ -193,7 +212,12 @@ class DiagramAPIServer {
       res.json({
         status: 'healthy',
         timestamp: new Date().toISOString(),
-        queue: this.queueManager.getQueueStatus()
+        queue: this.queueManager.getQueueStatus(),
+        environment: {
+          anthropicApiKey: !!process.env.ANTHROPIC_API_KEY,
+          mongoUri: !!process.env.MONGODB_URI,
+          jwtSecret: !!process.env.JWT_SECRET
+        }
       });
     });
   }
@@ -295,6 +319,11 @@ class DiagramAPIServer {
       // Initialize services
       await this.initServices();
 
+      // Initialize Python diagram generator (not needed - using Python script directly via queueManager)
+      // this.pythonGenerator = new PythonDiagramGenerator();
+      // this.app.locals.pythonGenerator = this.pythonGenerator;
+      // console.log('✓ Python diagram generator initialized');
+      
       // Setup Express
       this.setupMiddleware();
       this.setupRoutes();
