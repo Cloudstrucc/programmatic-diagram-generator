@@ -32,7 +32,7 @@ API_CUSTOM_DOMAIN="api.cloudstrucc.com"
 WEBAPP_CUSTOM_DOMAIN="app.cloudstrucc.com"
 
 # Environment Variables - CHANGE THESE!
-ANTHROPIC_API_KEY="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"
+ANTHROPIC_API_KEY="your key"
 JWT_SECRET="$(openssl rand -base64 32)"
 SESSION_SECRET="$(openssl rand -base64 32)"
 
