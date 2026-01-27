@@ -16,18 +16,18 @@ router.get('/generator', ensureAuthenticated, async (req, res) => {
     const limits = req.user.getTierLimits();
 
     // Get available templates and styles
-    let templates = [];
-    let styles = [];
+    const templates = [];
+    const styles = ['azure', 'aws', 'gcp', 'kubernetes', 'generic'];
     
-    try {
-      const templatesData = await DiagramAPIClient.getPythonTemplates(req.user);
-      templates = templatesData.templates || [];
+    // try {
+    //   const templatesData = await DiagramAPIClient.getPythonTemplates(req.user);
+    //   templates = templatesData.templates || [];
       
-      const stylesData = await DiagramAPIClient.getPythonStyles(req.user);
-      styles = stylesData.styles || [];
-    } catch (err) {
-      console.error('Error fetching templates/styles:', err);
-    }
+    //   const stylesData = await DiagramAPIClient.getPythonStyles(req.user);
+    //   styles = stylesData.styles || [];
+    // } catch (err) {
+    //   console.error('Error fetching templates/styles:', err);
+    // }
 
     res.render('generator', {
       title: 'Generate Diagram - CloudStrucc',

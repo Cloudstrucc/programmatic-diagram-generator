@@ -1,4 +1,4 @@
-// QueueManager - Complete Fixed Version
+// QueueManager - Complete Fixed Version with Enhanced Debugging
 const redis = require('../config/redis');
 const mongoose = require('mongoose');
 const { exec } = require('child_process');
@@ -136,6 +136,22 @@ class QueueManager extends EventEmitter {
     async generateDiagramViaPython(params) {
         const { prompt, style, diagramType, quality, requestId } = params;
         
+        // ============================================================================
+        // ENHANCED DEBUGGING - Check environment variables before exec
+        // ============================================================================
+        console.log('\n🔍 Python Execution Environment Check:');
+        console.log('======================================');
+        console.log('ANTHROPIC_API_KEY available:', process.env.ANTHROPIC_API_KEY ? 'YES ✓' : 'NO ✗');
+        console.log('ANTHROPIC_API_KEY length:', process.env.ANTHROPIC_API_KEY?.length || 0);
+        console.log('ANTHROPIC_API_KEY starts with:', process.env.ANTHROPIC_API_KEY?.substring(0, 10) || 'N/A');
+        console.log('All process.env keys:', Object.keys(process.env).filter(k => k.includes('ANTHROPIC')));
+        console.log('======================================\n');
+
+        if (!process.env.ANTHROPIC_API_KEY) {
+            throw new Error('ANTHROPIC_API_KEY not available in Node.js environment! Check Azure Portal configuration.');
+        }
+        // ============================================================================
+        
         const scriptPath = path.join(__dirname, '../scripts/generate_diagram.py');
         
         const command = `python3.11 "${scriptPath}" \
@@ -151,16 +167,23 @@ class QueueManager extends EventEmitter {
             console.log(`Working dir: ${process.cwd()}`);
             console.log(`Script path: ${scriptPath}`);
             
-            // FIXED: Add Graphviz to PATH and include ANTHROPIC_API_KEY
+            // FIXED: Explicitly pass environment variables to child process
+            const envVars = {
+                ...process.env,
+                PATH: `${process.env.PATH}:/usr/local/bin:/opt/homebrew/bin`,
+                ANTHROPIC_API_KEY: process.env.APPSETTING_ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY,
+                PYTHONUNBUFFERED: '1'  // Ensure Python output is not buffered
+            };
+
+            console.log('Environment variables being passed to Python:');
+            console.log('- ANTHROPIC_API_KEY:', envVars.ANTHROPIC_API_KEY ? `Set (${envVars.ANTHROPIC_API_KEY.length} chars)` : 'NOT SET');
+            console.log('- PATH:', envVars.PATH?.substring(0, 100) + '...');
+            
             const { stdout, stderr } = await execPromise(command, {
                 maxBuffer: 10 * 1024 * 1024,
                 timeout: 120000,
                 cwd: path.join(__dirname, '..'),
-                env: {
-                    ...process.env,
-                    PATH: `${process.env.PATH}:/usr/local/bin:/opt/homebrew/bin`,
-                    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY
-                }
+                env: envVars
             });
 
             console.log('Python stdout:', stdout);

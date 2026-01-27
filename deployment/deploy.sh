@@ -9,10 +9,9 @@
 #------------------------------------------------------------------------------
 
 # Azure Configuration
-SUBSCRIPTION_ID="your subscription id"
-ACR_NAME="cloudstruccacr123APIapp"
+SUBSCRIPTION_ID="your-subscription-id"
 RESOURCE_GROUP="cloudstrucc-rg"
-LOCATION="canadacentral"
+LOCATION="eastus"
 APP_SERVICE_PLAN="cloudstrucc-plan"
 APP_SERVICE_SKU="B1"  # B1, B2, B3, S1, S2, S3, P1V2, P2V2, P3V2
 
@@ -33,7 +32,7 @@ API_CUSTOM_DOMAIN="api.cloudstrucc.com"
 WEBAPP_CUSTOM_DOMAIN="app.cloudstrucc.com"
 
 # Environment Variables - CHANGE THESE!
-ANTHROPIC_API_KEY="sk-ant-your-key-here"
+ANTHROPIC_API_KEY="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"
 JWT_SECRET="$(openssl rand -base64 32)"
 SESSION_SECRET="$(openssl rand -base64 32)"
 
@@ -123,6 +122,10 @@ create_container_registry() {
         --admin-enabled true \
         --output none
     
+    # Wait for ACR to be ready
+    info "Waiting for ACR to be ready..."
+    sleep 10
+    
     success "Container Registry created"
 }
 
@@ -178,7 +181,7 @@ init_azure_resources() {
         --output none
     success "Resource group created"
     
-    # Create Container Registry
+    # Create Container Registry FIRST (before building images)
     create_container_registry
     
     # Create App Service Plan
@@ -293,6 +296,25 @@ configure_environment() {
             DOCKER_REGISTRY_SERVER_URL="https://$ACR_LOGIN_SERVER" \
         --output none
     success "Webapp environment configured"
+    
+    # Enable logging
+    info "Enabling application logging..."
+    az webapp log config \
+        --resource-group "$RESOURCE_GROUP" \
+        --name "$API_APP_NAME" \
+        --application-logging filesystem \
+        --level information \
+        --docker-container-logging filesystem \
+        --output none
+    
+    az webapp log config \
+        --resource-group "$RESOURCE_GROUP" \
+        --name "$WEBAPP_APP_NAME" \
+        --application-logging filesystem \
+        --level information \
+        --docker-container-logging filesystem \
+        --output none
+    success "Logging enabled"
     
     # Enable continuous deployment from ACR
     az webapp deployment container config \
@@ -534,8 +556,8 @@ main() {
     case "${1:-init}" in
         init)
             check_prerequisites
-            build_and_push_images
-            init_azure_resources
+            init_azure_resources  # Creates ACR first
+            build_and_push_images  # Then builds and pushes images
             configure_environment
             configure_domains
             show_urls

@@ -3,7 +3,7 @@ const axios = require('axios');
 const jwt = require('jsonwebtoken');
 
 const API_URL = process.env.API_URL || 'http://localhost:3000';
-const JWT_SECRET = process.env.API_JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
+const JWT_SECRET = process.env.API_JWT_SECRET || 'wUQtUPxbAHkR4iA1FuaQa0JnEJqFIb9qbjpDdSvuXmI=';
 
 class DiagramAPIClient {
   /**
