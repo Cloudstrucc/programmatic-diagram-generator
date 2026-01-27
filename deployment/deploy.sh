@@ -10,6 +10,7 @@
 
 # Azure Configuration
 SUBSCRIPTION_ID="7719c366-5f64-439a-a6c6-65067d5a97e4"
+ACR_NAME="cloudstruccacr123APIapp"
 RESOURCE_GROUP="cloudstrucc-rg"
 LOCATION="eastus"
 APP_SERVICE_PLAN="cloudstrucc-plan"
