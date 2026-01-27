@@ -9,10 +9,10 @@
 #------------------------------------------------------------------------------
 
 # Azure Configuration
-SUBSCRIPTION_ID="7719c366-5f64-439a-a6c6-65067d5a97e4"
+SUBSCRIPTION_ID="your subscription id"
 ACR_NAME="cloudstruccacr123APIapp"
 RESOURCE_GROUP="cloudstrucc-rg"
-LOCATION="eastus"
+LOCATION="canadacentral"
 APP_SERVICE_PLAN="cloudstrucc-plan"
 APP_SERVICE_SKU="B1"  # B1, B2, B3, S1, S2, S3, P1V2, P2V2, P3V2
 
