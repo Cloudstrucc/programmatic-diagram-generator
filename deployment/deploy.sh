@@ -1,7 +1,7 @@
 #!/bin/bash
 ###############################################################################
 # CloudStrucc Diagram Generator - Azure Deployment Script (Docker Version)
-# Usage: ./deploy-docker.sh [init|update|logs|restart|build]
+# Usage: ./deploy.sh [init|update|logs|restart|build]
 ###############################################################################
 
 #------------------------------------------------------------------------------
@@ -9,9 +9,9 @@
 #------------------------------------------------------------------------------
 
 # Azure Configuration
-SUBSCRIPTION_ID="your-subscription-id"
+SUBSCRIPTION_ID="7719c366-5f64-439a-a6c6-65067d5a97e4"
 RESOURCE_GROUP="cloudstrucc-rg"
-LOCATION="eastus"
+LOCATION="canadacentral"
 APP_SERVICE_PLAN="cloudstrucc-plan"
 APP_SERVICE_SKU="B1"  # B1, B2, B3, S1, S2, S3, P1V2, P2V2, P3V2
 
@@ -28,8 +28,8 @@ MONGODB_NAME="cloudstrucc-mongodb"
 MONGODB_SKU="serverless"  # serverless or provisioned
 
 # Custom Domains (leave empty if not using custom domains)
-API_CUSTOM_DOMAIN="api.cloudstrucc.com"
-WEBAPP_CUSTOM_DOMAIN="app.cloudstrucc.com"
+API_CUSTOM_DOMAIN="api-diagrams.cloudstrucc.com"
+WEBAPP_CUSTOM_DOMAIN="diagrams.cloudstrucc.com"
 
 # Environment Variables - CHANGE THESE!
 ANTHROPIC_API_KEY="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"
