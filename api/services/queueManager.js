@@ -1,4 +1,4 @@
-// QueueManager - Complete Fixed Version with Enhanced Debugging
+// QueueManager - Complete Fixed Version with --format parameter
 const redis = require('../config/redis');
 const mongoose = require('mongoose');
 const { exec } = require('child_process');
@@ -35,7 +35,8 @@ class QueueManager extends EventEmitter {
             userId: options.userId,
             userTier: options.userTier,
             prompt: options.prompt,
-            diagramType: options.diagramType || 'python',
+            format: options.format || 'graphviz',  // Use format instead of diagramType
+            diagramType: options.diagramType || 'python',  // Keep for backwards compatibility
             style: options.style || options.templateType || 'azure',
             quality: options.quality || 'standard',
             outputFormat: options.outputFormat || 'png',
@@ -45,6 +46,7 @@ class QueueManager extends EventEmitter {
         this.queue.push(request);
         
         console.log(`✓ Enqueued: ${request.requestId}`);
+        console.log(`  Format: ${request.format}, Style: ${request.style}`);
         console.log(`  Queue length: ${this.queue.length}`);
         
         this.emit('enqueued', request);
@@ -75,6 +77,7 @@ class QueueManager extends EventEmitter {
 
             try {
                 console.log(`Processing: ${request.requestId}`);
+                console.log(`Processing request ${request.requestId}`);
                 this.emit('processing', request);
                 await this.processRequest(request);
             } catch (error) {
@@ -89,7 +92,7 @@ class QueueManager extends EventEmitter {
     }
 
     async processRequest(request) {
-        const { requestId, prompt, style, diagramType, quality, userId } = request;
+        const { requestId, prompt, style, format, diagramType, quality, userId } = request;
 
         try {
             await this.updateRequestStatus(requestId, 'generating', {
@@ -100,7 +103,7 @@ class QueueManager extends EventEmitter {
             const result = await this.generateDiagramViaPython({
                 prompt,
                 style,
-                diagramType,
+                format: format || (diagramType === 'python' ? 'graphviz' : diagramType),
                 quality,
                 requestId
             });
@@ -134,30 +137,42 @@ class QueueManager extends EventEmitter {
     }
 
     async generateDiagramViaPython(params) {
-        const { prompt, style, diagramType, quality, requestId } = params;
+        const { prompt, style, format, quality, requestId } = params;
+        
+        // Ensure format is always 'graphviz'
+        const diagramFormat = format || 'graphviz';
         
         // ============================================================================
         // ENHANCED DEBUGGING - Check environment variables before exec
         // ============================================================================
         console.log('\n🔍 Python Execution Environment Check:');
         console.log('======================================');
+        console.log('Format:', diagramFormat);
+        console.log('Style:', style);
         console.log('ANTHROPIC_API_KEY available:', process.env.ANTHROPIC_API_KEY ? 'YES ✓' : 'NO ✗');
-        console.log('ANTHROPIC_API_KEY length:', process.env.ANTHROPIC_API_KEY?.length || 0);
-        console.log('ANTHROPIC_API_KEY starts with:', process.env.ANTHROPIC_API_KEY?.substring(0, 10) || 'N/A');
-        console.log('All process.env keys:', Object.keys(process.env).filter(k => k.includes('ANTHROPIC')));
+        console.log('APPSETTING_ANTHROPIC_API_KEY available:', process.env.APPSETTING_ANTHROPIC_API_KEY ? 'YES ✓' : 'NO ✗');
+        
+        if (process.env.ANTHROPIC_API_KEY) {
+            console.log('API Key length:', process.env.ANTHROPIC_API_KEY.length);
+            console.log('API Key starts with:', process.env.ANTHROPIC_API_KEY.substring(0, 10));
+        }
+        
+        const allAnthropicKeys = Object.keys(process.env).filter(k => k.includes('ANTHROPIC'));
+        console.log('All ANTHROPIC env keys:', allAnthropicKeys);
         console.log('======================================\n');
 
-        if (!process.env.ANTHROPIC_API_KEY) {
+        if (!process.env.ANTHROPIC_API_KEY && !process.env.APPSETTING_ANTHROPIC_API_KEY) {
             throw new Error('ANTHROPIC_API_KEY not available in Node.js environment! Check Azure Portal configuration.');
         }
         // ============================================================================
         
         const scriptPath = path.join(__dirname, '../scripts/generate_diagram.py');
         
+        // FIXED: Use --format instead of --type
         const command = `python3.11 "${scriptPath}" \
             --prompt "${prompt.replace(/"/g, '\\"')}" \
+            --format "${diagramFormat}" \
             --style "${style}" \
-            --type "${diagramType}" \
             --quality "${quality}" \
             --request-id "${requestId}"`;
 
@@ -172,11 +187,12 @@ class QueueManager extends EventEmitter {
                 ...process.env,
                 PATH: `${process.env.PATH}:/usr/local/bin:/opt/homebrew/bin`,
                 ANTHROPIC_API_KEY: process.env.APPSETTING_ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY,
+                CLAUDE_MODEL: process.env.APPSETTING_CLAUDE_MODEL || process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514',
                 PYTHONUNBUFFERED: '1'  // Ensure Python output is not buffered
             };
 
             console.log('Environment variables being passed to Python:');
-            console.log('- ANTHROPIC_API_KEY:', envVars.ANTHROPIC_API_KEY ? `Set (${envVars.ANTHROPIC_API_KEY.length} chars)` : 'NOT SET');
+            console.log('- ANTHROPIC_API_KEY:', envVars.ANTHROPIC_API_KEY ? `Set (${envVars.ANTHROPIC_API_KEY.length} chars, starts with ${envVars.ANTHROPIC_API_KEY.substring(0, 20)}...)` : 'NOT SET');
             console.log('- PATH:', envVars.PATH?.substring(0, 100) + '...');
             
             const { stdout, stderr } = await execPromise(command, {
@@ -323,13 +339,13 @@ class QueueManager extends EventEmitter {
             processing: this.processing,
             currentRequest: this.currentRequest ? {
                 requestId: this.currentRequest.requestId,
-                style: this.currentRequest.style,
-                diagramType: this.currentRequest.diagramType
+                format: this.currentRequest.format || this.currentRequest.diagramType,
+                style: this.currentRequest.style
             } : null,
             upcomingRequests: this.queue.slice(0, 5).map(req => ({
                 requestId: req.requestId,
-                style: req.style,
-                diagramType: req.diagramType
+                format: req.format || req.diagramType,
+                style: req.style
             }))
         };
     }
