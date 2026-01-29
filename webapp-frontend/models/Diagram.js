@@ -21,6 +21,10 @@ const DiagramSchema = new mongoose.Schema({
     enum: ['drawio', 'python'],
     required: true
   },
+  diagramFormat: {  // ✅ ADDED - Track the format (graphviz, graphviz-dot, etc.)
+    type: String,
+    default: null
+  },
   style: {
     type: String,
     default: 'azure'
@@ -40,6 +44,14 @@ const DiagramSchema = new mongoose.Schema({
   },
   xmlData: {
     type: String, // XML for drawio diagrams
+    default: null
+  },
+  drawioXml: {  // ✅ ADDED - Draw.io native XML format
+    type: String,
+    default: null
+  },
+  svgData: {  // ✅ ADDED - SVG format (for future use)
+    type: String,
     default: null
   },
   fileName: {
@@ -71,7 +83,7 @@ const DiagramSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  requestId: {
+  requestId: {  // Note: You have this duplicated (line 46 and 62), keeping both for safety
     type: String,
     index: true
   },
