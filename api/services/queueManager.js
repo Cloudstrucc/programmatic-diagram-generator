@@ -1,4 +1,4 @@
-// QueueManager - Complete Fixed Version with --format parameter
+// QueueManager - Complete Version with Draw.io XML Support
 const redis = require('../config/redis');
 const mongoose = require('mongoose');
 const { exec } = require('child_process');
@@ -6,6 +6,8 @@ const path = require('path');
 const util = require('util');
 const { EventEmitter } = require('events');
 const execPromise = util.promisify(exec);
+const scriptPath = path.join(__dirname, '../scripts/generate_diagram.py');
+
 
 class QueueManager extends EventEmitter {
     constructor(db, usageTracker) {
@@ -35,18 +37,24 @@ class QueueManager extends EventEmitter {
             userId: options.userId,
             userTier: options.userTier,
             prompt: options.prompt,
-            format: options.format || 'graphviz',  // Use format instead of diagramType
-            diagramType: options.diagramType || 'python',  // Keep for backwards compatibility
+            format: options.format || 'graphviz',
+            diagramType: options.diagramType || 'python',
+            templateType: options.templateType,  // For draw.io templates
             style: options.style || options.templateType || 'azure',
             quality: options.quality || 'standard',
             outputFormat: options.outputFormat || 'png',
+            drawioNative: options.drawioNative || false,  // NEW: Draw.io XML export flag
             timestamp: new Date()
         };
         
         this.queue.push(request);
         
         console.log(`✓ Enqueued: ${request.requestId}`);
+        console.log(`  Type: ${request.diagramType}`);
         console.log(`  Format: ${request.format}, Style: ${request.style}`);
+        if (request.diagramType === 'python') {
+            console.log(`  Quality: ${request.quality}, DrawioNative: ${request.drawioNative}`);
+        }
         console.log(`  Queue length: ${this.queue.length}`);
         
         this.emit('enqueued', request);
@@ -77,7 +85,6 @@ class QueueManager extends EventEmitter {
 
             try {
                 console.log(`Processing: ${request.requestId}`);
-                console.log(`Processing request ${request.requestId}`);
                 this.emit('processing', request);
                 await this.processRequest(request);
             } catch (error) {
@@ -92,7 +99,17 @@ class QueueManager extends EventEmitter {
     }
 
     async processRequest(request) {
-        const { requestId, prompt, style, format, diagramType, quality, userId } = request;
+        const { 
+            requestId, 
+            prompt, 
+            style, 
+            format, 
+            diagramType, 
+            templateType,
+            quality, 
+            userId, 
+            drawioNative 
+        } = request;
 
         try {
             await this.updateRequestStatus(requestId, 'generating', {
@@ -100,23 +117,41 @@ class QueueManager extends EventEmitter {
                 progress: 10
             });
 
-            const result = await this.generateDiagramViaPython({
-                prompt,
-                style,
-                format: format || (diagramType === 'python' ? 'graphviz' : diagramType),
-                quality,
-                requestId
-            });
+            let result;
+
+            // Route to correct generator based on diagramType
+            if (diagramType === 'drawio') {
+                console.log(`🎨 Using Draw.io template generator (templateType: ${templateType})`);
+                result = await this.generateDrawioDiagram({
+                    prompt,
+                    templateType,
+                    style,
+                    requestId
+                });
+            } else {
+                console.log(`🐍 Using Python diagram generator`);
+                result = await this.generateDiagramViaPython({
+                    prompt,
+                    style,
+                    format: format || 'graphviz',
+                    quality,
+                    requestId,
+                    drawioNative
+                });
+            }
 
             await this.updateRequestStatus(requestId, 'completed', {
                 message: 'Completed',
                 progress: 100,
-                result: result.imageData
+                result: result.imageData,
+                drawioXml: result.drawioXml
             });
 
             await this.saveResultToDatabase(requestId, {
                 status: 'completed',
                 result: result.imageData,
+                drawioXml: result.drawioXml,
+                svgData: result.svgData,
                 metadata: result.metadata,
                 userId,
                 completedAt: new Date()
@@ -125,10 +160,14 @@ class QueueManager extends EventEmitter {
             this.emit('completed', {
                 requestId,
                 result: result.imageData,
+                drawioXml: result.drawioXml,
                 usage: {}
             });
 
             console.log(`✓ Completed: ${requestId}`);
+            console.log(`  Type: ${diagramType}`);
+            console.log(`  Has imageData: ${!!result.imageData}`);
+            console.log(`  Has drawioXml: ${!!result.drawioXml}, Length: ${result.drawioXml?.length || 0}`);
 
         } catch (error) {
             console.error(`Failed: ${requestId}`, error);
@@ -136,19 +175,44 @@ class QueueManager extends EventEmitter {
         }
     }
 
-    async generateDiagramViaPython(params) {
-        const { prompt, style, format, quality, requestId } = params;
+    /**
+     * Generate diagram using Draw.io templates (your existing system)
+     */
+    async generateDrawioDiagram(params) {
+        const { prompt, templateType, style, requestId } = params;
         
-        // Ensure format is always 'graphviz'
+        console.log('🎨 Draw.io template generation:', { templateType, style });
+        
+        // TODO: Implement your existing Draw.io template generation here
+        // This is placeholder - replace with your actual implementation
+        
+        throw new Error('Draw.io template generation not yet implemented in queueManager. Please implement generateDrawioDiagram() method.');
+        
+        // Example of what this should return:
+        // return {
+        //     imageData: base64ImageData,
+        //     drawioXml: drawioXmlString,  // Optional
+        //     metadata: { templateType, style }
+        // };
+    }
+
+    /**
+     * Generate diagram using Python script
+     */
+    async generateDiagramViaPython(params) {
+        const { prompt, style, format, quality, requestId, drawioNative } = params;
+        
         const diagramFormat = format || 'graphviz';
         
         // ============================================================================
         // ENHANCED DEBUGGING - Check environment variables before exec
         // ============================================================================
-        console.log('\n🔍 Python Execution Environment Check:');
-        console.log('======================================');
+        console.log('\n🐍 Python Execution Environment:');
+        console.log('================================');
         console.log('Format:', diagramFormat);
         console.log('Style:', style);
+        console.log('Quality:', quality);
+        console.log('DrawioNative:', drawioNative);
         console.log('ANTHROPIC_API_KEY available:', process.env.ANTHROPIC_API_KEY ? 'YES ✓' : 'NO ✗');
         console.log('APPSETTING_ANTHROPIC_API_KEY available:', process.env.APPSETTING_ANTHROPIC_API_KEY ? 'YES ✓' : 'NO ✗');
         
@@ -159,7 +223,7 @@ class QueueManager extends EventEmitter {
         
         const allAnthropicKeys = Object.keys(process.env).filter(k => k.includes('ANTHROPIC'));
         console.log('All ANTHROPIC env keys:', allAnthropicKeys);
-        console.log('======================================\n');
+        console.log('================================\n');
 
         if (!process.env.ANTHROPIC_API_KEY && !process.env.APPSETTING_ANTHROPIC_API_KEY) {
             throw new Error('ANTHROPIC_API_KEY not available in Node.js environment! Check Azure Portal configuration.');
@@ -168,7 +232,6 @@ class QueueManager extends EventEmitter {
         
         const scriptPath = path.join(__dirname, '../scripts/generate_diagram.py');
         
-        // FIXED: Use --format instead of --type
         const command = `python3.11 "${scriptPath}" \
             --prompt "${prompt.replace(/"/g, '\\"')}" \
             --format "${diagramFormat}" \
@@ -182,13 +245,13 @@ class QueueManager extends EventEmitter {
             console.log(`Working dir: ${process.cwd()}`);
             console.log(`Script path: ${scriptPath}`);
             
-            // FIXED: Explicitly pass environment variables to child process
+            // Explicitly pass environment variables to child process
             const envVars = {
                 ...process.env,
                 PATH: `${process.env.PATH}:/usr/local/bin:/opt/homebrew/bin`,
                 ANTHROPIC_API_KEY: process.env.APPSETTING_ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY,
                 CLAUDE_MODEL: process.env.APPSETTING_CLAUDE_MODEL || process.env.CLAUDE_MODEL || 'claude-sonnet-4-20250514',
-                PYTHONUNBUFFERED: '1'  // Ensure Python output is not buffered
+                PYTHONUNBUFFERED: '1'
             };
 
             console.log('Environment variables being passed to Python:');
@@ -213,10 +276,21 @@ class QueueManager extends EventEmitter {
                 throw new Error(result.error || 'Generation failed');
             }
             
+            // Debug logging for result
+            console.log('✅ Python result parsed:', {
+                success: result.success,
+                hasImageData: !!result.imageData,
+                imageDataLength: result.imageData?.length || 0,
+                hasDrawioXml: !!result.drawioXml,
+                drawioXmlLength: result.drawioXml?.length || 0,
+                hasSvgData: !!result.svgData,
+                format: result.format
+            });
+            
             return result;
 
         } catch (error) {
-            console.error('Python error:', error);
+            console.error('❌ Python error:', error);
             console.error('Error details:', {
                 message: error.message,
                 stdout: error.stdout,
@@ -275,6 +349,8 @@ class QueueManager extends EventEmitter {
                     $set: {
                         status: data.status,
                         result: data.result,
+                        drawioXml: data.drawioXml,  // NEW: Save Draw.io XML
+                        svgData: data.svgData,      // NEW: Save SVG data
                         error: data.error,
                         metadata: data.metadata,
                         completedAt: data.completedAt,
@@ -285,6 +361,7 @@ class QueueManager extends EventEmitter {
             );
             
             console.log(`✓ DB saved: ${requestId}`);
+            console.log(`  Has drawioXml: ${!!data.drawioXml}, Length: ${data.drawioXml?.length || 0}`);
 
         } catch (error) {
             console.error('DB save error:', error);
@@ -301,6 +378,8 @@ class QueueManager extends EventEmitter {
                         requestId: dbData.requestId,
                         status: dbData.status,
                         result: dbData.result,
+                        drawioXml: dbData.drawioXml,  // NEW: Return Draw.io XML
+                        svgData: dbData.svgData,      // NEW: Return SVG data
                         error: dbData.error,
                         completedAt: dbData.completedAt,
                         position: 0
@@ -339,12 +418,14 @@ class QueueManager extends EventEmitter {
             processing: this.processing,
             currentRequest: this.currentRequest ? {
                 requestId: this.currentRequest.requestId,
-                format: this.currentRequest.format || this.currentRequest.diagramType,
+                diagramType: this.currentRequest.diagramType,
+                format: this.currentRequest.format,
                 style: this.currentRequest.style
             } : null,
             upcomingRequests: this.queue.slice(0, 5).map(req => ({
                 requestId: req.requestId,
-                format: req.format || req.diagramType,
+                diagramType: req.diagramType,
+                format: req.format,
                 style: req.style
             }))
         };
