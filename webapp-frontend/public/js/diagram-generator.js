@@ -10,14 +10,25 @@ document.addEventListener('DOMContentLoaded', function() {
     form.addEventListener('submit', async function(e) {
         e.preventDefault();
 
+        const drawioNativeCheckbox = document.getElementById('drawioNative');
+        const drawioNativeValue = drawioNativeCheckbox ? drawioNativeCheckbox.checked : false;
+
         const formData = {
             title: document.getElementById('title').value,
             prompt: document.getElementById('prompt').value,
             diagramType: 'python',  // For database (always python)
             format: document.getElementById('diagramFormat').value,  // For API (graphviz or graphviz-dot)
             style: document.getElementById('style').value,
-            quality: document.getElementById('quality').value
+            quality: document.getElementById('quality').value,
+            drawioNative: drawioNativeValue
         };
+
+        // DEBUG LOGGING
+        console.log('=== FORM SUBMISSION DEBUG ===');
+        console.log('Form Data:', formData);
+        console.log('drawioNative checkbox element:', drawioNativeCheckbox);
+        console.log('drawioNative value:', drawioNativeValue);
+        console.log('============================');
 
         // Show status
         statusArea.style.display = 'block';
@@ -29,6 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             // Submit generation request
+            console.log('🚀 Sending request to /diagrams/generate');
             const response = await fetch('/diagrams/generate', {
                 method: 'POST',
                 headers: {
@@ -38,6 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             const result = await response.json();
+            console.log('📥 Response from server:', result);
 
             if (!result.success) {
                 throw new Error(result.message || 'Failed to generate diagram');
@@ -46,13 +59,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const diagramId = result.diagramId;
             const requestId = result.requestId;
             
+            console.log('✅ Diagram created with ID:', diagramId);
+            console.log('✅ Request ID:', requestId);
+            
             statusText.textContent = '🎨 Your diagram is being created... This usually takes 15-30 seconds.';
 
             // Poll for status using requestId (up to 2 minutes)
             await pollDiagramStatus(diagramId, requestId);
 
         } catch (error) {
-            console.error('Error:', error);
+            console.error('❌ Error:', error);
             statusArea.innerHTML = `
                 <div class="alert alert-danger">
                     <i class="bi bi-exclamation-triangle me-2"></i>
@@ -84,19 +100,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Handle 404 gracefully - diagram might not be saved yet
                 if (response.status === 404) {
+                    console.log(`⏳ Status check ${attempts}: Not ready yet (404)`);
                     statusText.textContent = `⏳ Preparing your diagram... (${elapsed}s)`;
                     setTimeout(poll, 2000);
                     return;
                 }
 
                 const result = await response.json();
+                console.log(`📊 Status check ${attempts}:`, result.status);
 
                 if (result.status === 'completed') {
                     // Success!
+                    console.log('✅ Diagram completed! Redirecting to view page...');
                     statusArea.innerHTML = `
                         <div class="alert alert-success">
                             <i class="bi bi-check-circle me-2"></i>
                             <strong>Success!</strong> Your diagram is ready!
+                            <br><small class="mt-1 d-block">Download as PNG or Draw.io XML on the next page</small>
                         </div>
                     `;
 
@@ -106,7 +126,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     }, 1000);
 
                 } else if (result.status === 'failed') {
-                    throw new Error(result.error || result.message || 'Diagram generation failed. Please try again.');
+                    // Enhanced error message with context
+                    let errorMsg = result.error || result.message || 'Diagram generation failed';
+                    
+                    console.error('❌ Diagram generation failed:', errorMsg);
+                    
+                    // Provide helpful context based on error type
+                    if (errorMsg.includes('Import error') || errorMsg.includes('cannot import')) {
+                        errorMsg += '. This might be a temporary issue - please try again or contact support.';
+                    }
+                    
+                    throw new Error(errorMsg);
 
                 } else {
                     // Still generating - show friendly progress message

@@ -1,5 +1,14 @@
 <section style="background: var(--light-bg); padding: 60px 0 80px;">
     <div class="container">
+        <!-- TEMPORARY DEBUG INFO - Remove after fixing -->
+        <div class="alert alert-warning mb-3">
+            <strong>🐛 Debug Info (Remove this after testing):</strong><br>
+            <code>drawioXml exists: {{#if diagram.drawioXml}}YES ({{diagram.drawioXml.length}} chars){{else}}NO{{/if}}</code><br>
+            <code>diagramFormat: {{diagram.diagramFormat}}</code><br>
+            <code>imageData exists: {{#if diagram.imageData}}YES{{else}}NO{{/if}}</code><br>
+            <code>status: {{diagram.status}}</code>
+        </div>
+
         <div class="row mb-4">
             <div class="col-md-8">
                 <h1>{{diagram.title}}</h1>
@@ -12,7 +21,7 @@
             </div>
         </div>
 
-        <!-- Download Buttons -->
+       <!-- Download Buttons -->
         {{#if (eq diagram.status 'completed')}}
         <div class="row mb-3">
             <div class="col-12">
@@ -25,10 +34,41 @@
                         <i class="bi bi-download me-2"></i>Download SVG
                     </button>
                     {{/if}}
-                    <button class="btn btn-outline-primary" onclick="downloadDrawIO()">
-                        <i class="bi bi-download me-2"></i>Download for Draw.io
-                    </button>
+                    
+                    {{!-- Draw.io buttons - Show if drawioXml exists --}}
+                    {{#if diagram.drawioXml}}
+                        <button class="btn btn-success" onclick="openInDrawio()" 
+                                title="Open directly in Draw.io - no download needed!">
+                            <i class="bi bi-box-arrow-up-right me-2"></i>Open in Draw.io
+                        </button>
+                        <button class="btn btn-outline-success" onclick="downloadDrawIOFile()"
+                                title="Download .drawio file to save locally">
+                            <i class="bi bi-download me-2"></i>Download .drawio
+                        </button>
+                    {{else}}
+                        <!-- DEBUG: Show why buttons aren't appearing -->
+                        <button class="btn btn-secondary" disabled>
+                            <i class="bi bi-x-circle me-2"></i>Draw.io: No XML Data
+                        </button>
+                    {{/if}}
                 </div>
+                
+                <!-- TEMPORARY DEBUG BUTTON -->
+                <button class="btn btn-warning btn-sm mt-2" onclick="testDrawioData()">
+                    🐛 Test Draw.io Data (Remove after testing)
+                </button>
+                
+                {{#if diagram.drawioXml}}
+                <small class="text-muted d-block mt-2">
+                    <i class="bi bi-info-circle me-1"></i>
+                    "Open in Draw.io" opens directly in your browser - no download needed!
+                </small>
+                {{else}}
+                <small class="text-danger d-block mt-2">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    Draw.io XML not available for this diagram. Try regenerating with a newer version.
+                </small>
+                {{/if}}
             </div>
         </div>
         {{/if}}
@@ -69,6 +109,19 @@
                         <h5>Details</h5>
                         <hr>
                         <p><strong>Type:</strong> {{diagram.diagramType}}</p>
+                        {{#if diagram.diagramFormat}}
+                        <p><strong>Format:</strong> 
+                            {{#if (eq diagram.diagramFormat 'graphviz')}}
+                            <span class="badge bg-primary">Cloud Architecture</span>
+                            {{else if (eq diagram.diagramFormat 'graphviz-dot')}}
+                            <span class="badge bg-success">Traditional Diagram</span>
+                            {{else if (eq diagram.diagramFormat 'drawio-native')}}
+                            <span class="badge bg-info">Draw.io Native</span>
+                            {{else}}
+                            {{diagram.diagramFormat}}
+                            {{/if}}
+                        </p>
+                        {{/if}}
                         <p><strong>Style:</strong> {{diagram.style}}</p>
                         <p><strong>Quality:</strong> {{diagram.quality}}</p>
                         <p><strong>Status:</strong> 
@@ -81,6 +134,18 @@
                             {{/if}}
                         </p>
                         <p><strong>Created:</strong> {{formatDate diagram.createdAt}}</p>
+                        
+                        {{!-- Draw.io Export Status --}}
+                        <div class="mt-3 p-2 rounded" style="background-color: #f8f9fa;">
+                            <small class="text-muted d-block mb-1"><strong>Export Options:</strong></small>
+                            <small>
+                                {{#if diagram.drawioXml}}
+                                <i class="bi bi-check-circle text-success me-1"></i>Draw.io: Available
+                                {{else}}
+                                <i class="bi bi-x-circle text-danger me-1"></i>Draw.io: Not Available
+                                {{/if}}
+                            </small>
+                        </div>
                         
                         {{#if diagram.favorite}}
                         <button class="btn btn-sm btn-outline-warning w-100 mt-3" onclick="toggleFavorite()">
@@ -99,18 +164,59 @@
 </section>
 
 <script>
+const diagramFormat = '{{diagram.diagramFormat}}';
+const drawioXml = `{{{diagram.drawioXml}}}`;
+
+// COMPREHENSIVE DEBUG LOGGING
+console.log('=== DRAW.IO DEBUG INFO ===');
+console.log('Diagram ID:', '{{diagram._id}}');
+console.log('diagramFormat:', diagramFormat);
+console.log('drawioXml exists:', !!drawioXml);
+console.log('drawioXml length:', drawioXml ? drawioXml.length : 0);
+console.log('drawioXml is empty string:', drawioXml === '');
+console.log('drawioXml preview (first 200 chars):', drawioXml ? drawioXml.substring(0, 200) : 'NONE');
+console.log('imageData exists:', '{{#if diagram.imageData}}YES{{else}}NO{{/if}}');
+console.log('=========================');
+
+// DEBUG FUNCTION - Shows alert with data
+function testDrawioData() {
+    const info = `
+🐛 Draw.io Data Test
+====================
+Exists: ${!!drawioXml}
+Length: ${drawioXml ? drawioXml.length : 0}
+Is Empty String: ${drawioXml === ''}
+Type: ${typeof drawioXml}
+
+First 300 characters:
+${drawioXml ? drawioXml.substring(0, 300) : 'NO DATA'}
+
+Check browser console (F12) for full details.
+    `;
+    alert(info);
+    console.log('Full drawioXml content:', drawioXml);
+}
+
 // Download PNG
 function downloadPNG() {
     const imageData = '{{diagram.imageData}}';
+    if (!imageData) {
+        alert('No image data available');
+        return;
+    }
     const link = document.createElement('a');
     link.href = 'data:image/png;base64,' + imageData;
     link.download = '{{diagram.title}}.png';
     link.click();
 }
 
-// Convert to SVG and download (basic conversion - embeds PNG in SVG)
+// Convert to SVG and download
 function convertToSVG() {
     const imageData = '{{diagram.imageData}}';
+    if (!imageData) {
+        alert('No image data available');
+        return;
+    }
     const img = document.getElementById('diagramImage');
     const width = img.naturalWidth || 1200;
     const height = img.naturalHeight || 800;
@@ -127,31 +233,58 @@ function convertToSVG() {
     link.click();
 }
 
-// Download as Draw.io compatible XML
-function downloadDrawIO() {
-    const imageData = '{{diagram.imageData}}';
-    const title = '{{diagram.title}}';
+// Open directly in Draw.io
+function openInDrawio() {
+    console.log('🚀 openInDrawio() called');
+    console.log('drawioXml length:', drawioXml ? drawioXml.length : 0);
     
-    // Create Draw.io XML with embedded image
-    const drawioXML = `<mxfile host="app.diagrams.net" modified="${new Date().toISOString()}" agent="CloudStrucc" version="1.0.0">
-  <diagram name="${title}" id="cloudstrucc-diagram">
-    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="800" background="white">
-      <root>
-        <mxCell id="0"/>
-        <mxCell id="1" parent="0"/>
-        <mxCell id="2" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=data:image/png;base64,${imageData}" vertex="1" parent="1">
-          <mxGeometry x="0" y="0" width="1200" height="800" as="geometry"/>
-        </mxCell>
-      </root>
-    </mxGraphModel>
-  </diagram>
-</mxfile>`;
+    if (!drawioXml || drawioXml.trim() === '') {
+        alert('Draw.io XML not available for this diagram.\n\nThis diagram was generated without Draw.io XML data. Please regenerate the diagram to get Draw.io export capability.');
+        console.error('❌ No Draw.io XML data available');
+        return;
+    }
     
-    const blob = new Blob([drawioXML], { type: 'application/xml' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = title + '.drawio';
-    link.click();
+    try {
+        console.log('✅ Encoding XML to base64...');
+        // Encode the XML data as base64
+        const base64Data = btoa(unescape(encodeURIComponent(drawioXml)));
+        console.log('✅ Base64 encoded, length:', base64Data.length);
+        
+        // Open Draw.io with the diagram data embedded
+        const drawioUrl = `https://app.diagrams.net/#R${base64Data}`;
+        console.log('✅ Opening Draw.io URL...');
+        
+        // Open in new tab
+        window.open(drawioUrl, '_blank');
+        console.log('✅ Draw.io opened successfully');
+    } catch (error) {
+        console.error('❌ Error opening in Draw.io:', error);
+        alert('Error opening in Draw.io: ' + error.message + '\n\nTry downloading the file instead.');
+    }
+}
+
+// Download .drawio file
+function downloadDrawIOFile() {
+    console.log('📥 downloadDrawIOFile() called');
+    
+    if (!drawioXml || drawioXml.trim() === '') {
+        alert('Draw.io XML not available for this diagram');
+        console.error('❌ No Draw.io XML data available');
+        return;
+    }
+    
+    try {
+        const title = '{{diagram.title}}';
+        const blob = new Blob([drawioXml], { type: 'application/xml' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = title + '.drawio';
+        link.click();
+        console.log('✅ Draw.io file downloaded:', title + '.drawio');
+    } catch (error) {
+        console.error('❌ Error downloading Draw.io file:', error);
+        alert('Error downloading file: ' + error.message);
+    }
 }
 
 // Toggle favorite
