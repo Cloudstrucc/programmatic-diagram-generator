@@ -66,13 +66,12 @@
                                 </small>
                             </div>
 
-                            <!-- Style Selection (dynamically updated) -->
+                            <!-- Style Selection -->
                             <div class="mb-4">
                                 <label for="style" class="form-label fw-bold">
                                     <i class="bi bi-palette me-2"></i>Style
                                 </label>
                                 <select class="form-select form-select-lg" id="style" name="style" {{#unless canCreate}}disabled{{/unless}}>
-                                    <!-- Cloud Architecture Styles (default) -->
                                     <optgroup label="Major Cloud Providers">
                                         <option value="azure">Azure</option>
                                         <option value="aws">AWS</option>
@@ -97,6 +96,35 @@
                                 <small class="text-muted d-block mt-2" id="style-help">
                                     Choose your cloud provider or platform
                                 </small>
+                            </div>
+
+                            <!-- NEW: Draw.io Native Format Checkbox -->
+                            <div class="mb-4">
+                                <div class="card" style="border: 2px solid #e3f2fd; background-color: #f8f9fa; border-radius: 10px;">
+                                    <div class="card-body p-3">
+                                        <div class="form-check">
+                                            <input 
+                                                class="form-check-input" 
+                                                type="checkbox" 
+                                                id="drawioNative" 
+                                                name="drawioNative"
+                                                {{#unless canCreate}}disabled{{/unless}}
+                                            >
+                                            <label class="form-check-label fw-bold" for="drawioNative">
+                                                <i class="bi bi-diagram-3-fill me-2 text-primary"></i>
+                                                Generate Draw.io Native Format
+                                            </label>
+                                        </div>
+                                        <small class="text-muted d-block mt-2" id="drawio-help">
+                                            <strong>When checked:</strong> Creates fully editable Draw.io XML with shapes you can click, move, and edit text in Draw.io<br>
+                                            <strong>When unchecked:</strong> Creates beautiful diagrams with provider icons (PNG/SVG export only)
+                                        </small>
+                                        <div class="alert alert-info mt-2 mb-0" style="padding: 8px 12px; font-size: 0.9em;" id="drawio-info">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            <strong>Draw.io Native:</strong> Uses Draw.io's built-in shapes and icon libraries. Text and shapes are fully editable. Best for diagrams you'll modify later.
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="mb-4">
@@ -129,20 +157,6 @@
                                                         <li><code>GCP microservices with Cloud Run and Cloud SQL</code></li>
                                                         <li><code>Kubernetes deployment with ingress and persistent storage</code></li>
                                                     </ul>
-                                                    <h6 class="fw-bold mt-3">SaaS & Modern Architectures:</h6>
-                                                    <ul class="small">
-                                                        <li><code>Microservices with Slack notifications, Auth0 login, and Datadog monitoring</code></li>
-                                                        <li><code>Data pipeline with Snowflake warehouse and Elasticsearch</code></li>
-                                                        <li><code>Firebase mobile app with Authentication and Firestore database</code></li>
-                                                        <li><code>Elastic Stack logging with Kibana dashboards and APM</code></li>
-                                                    </ul>
-                                                    <h6 class="fw-bold mt-3">Enterprise Cloud:</h6>
-                                                    <ul class="small">
-                                                        <li><code>IBM Cloud VPC with bare metal servers and DB2 database</code></li>
-                                                        <li><code>Oracle Cloud with Autonomous Database and Object Storage</code></li>
-                                                        <li><code>Digital Ocean Kubernetes cluster with managed database</code></li>
-                                                        <li><code>Alibaba Cloud ECS with SLB load balancer and RDS</code></li>
-                                                    </ul>
                                                 </div>
                                                 <div id="traditional-examples" style="display: none;">
                                                     <h6 class="fw-bold">Flowchart Examples:</h6>
@@ -150,21 +164,6 @@
                                                         <li><code>User login process with email verification and 2FA</code></li>
                                                         <li><code>Order processing workflow from cart to delivery</code></li>
                                                         <li><code>CI/CD pipeline from commit to production deployment</code></li>
-                                                    </ul>
-                                                    <h6 class="fw-bold mt-3">State Machine Examples:</h6>
-                                                    <ul class="small">
-                                                        <li><code>Order status states: pending, processing, shipped, delivered, cancelled</code></li>
-                                                        <li><code>User session states with timeout and renewal</code></li>
-                                                    </ul>
-                                                    <h6 class="fw-bold mt-3">Org Chart Examples:</h6>
-                                                    <ul class="small">
-                                                        <li><code>Software development team structure with managers and engineers</code></li>
-                                                        <li><code>IT department hierarchy</code></li>
-                                                    </ul>
-                                                    <h6 class="fw-bold mt-3">Network Examples:</h6>
-                                                    <ul class="small">
-                                                        <li><code>Corporate network with firewall, switches, servers, and databases</code></li>
-                                                        <li><code>Home network topology with router, WiFi, and IoT devices</code></li>
                                                     </ul>
                                                 </div>
                                             </div>
@@ -207,6 +206,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const styleHelp = document.getElementById('style-help');
     const cloudExamples = document.getElementById('cloud-examples');
     const traditionalExamples = document.getElementById('traditional-examples');
+    const drawioCheckbox = document.getElementById('drawioNative');
+    const drawioHelp = document.getElementById('drawio-help');
+    const drawioInfo = document.getElementById('drawio-info');
 
     // Style options for each format
     const styleOptions = {
@@ -215,15 +217,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 { value: 'azure', label: 'Azure', group: 'Major Cloud' },
                 { value: 'aws', label: 'AWS', group: 'Major Cloud' },
                 { value: 'gcp', label: 'GCP', group: 'Major Cloud' },
-                { value: 'saas', label: 'SaaS Services (Slack, Auth0, Datadog)', group: 'SaaS' },
-                { value: 'elastic', label: 'Elastic Stack (ELK)', group: 'SaaS' },
+                { value: 'saas', label: 'SaaS Services', group: 'SaaS' },
+                { value: 'elastic', label: 'Elastic Stack', group: 'SaaS' },
                 { value: 'firebase', label: 'Firebase', group: 'SaaS' },
                 { value: 'ibm', label: 'IBM Cloud', group: 'Enterprise' },
-                { value: 'oracle', label: 'Oracle Cloud (OCI)', group: 'Enterprise' },
+                { value: 'oracle', label: 'Oracle Cloud', group: 'Enterprise' },
                 { value: 'k8s', label: 'Kubernetes', group: 'Other' },
                 { value: 'digitalocean', label: 'Digital Ocean', group: 'Other' },
                 { value: 'alibabacloud', label: 'Alibaba Cloud', group: 'Other' },
-                { value: 'generic', label: 'Generic / On-Premise', group: 'Other' }
+                { value: 'generic', label: 'Generic', group: 'Other' }
             ],
             formatHelp: 'Best for cloud infrastructure with proper icons and logos',
             styleHelp: 'Choose your cloud provider or platform'
@@ -236,10 +238,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 { value: 'network', label: 'Network Topology' },
                 { value: 'sequence', label: 'Sequence Diagram' }
             ],
-            formatHelp: 'Best for process flows, state machines, org charts, and network diagrams',
+            formatHelp: 'Best for process flows, state machines, org charts',
             styleHelp: 'Choose your diagram type'
         }
     };
+
+    function updateDrawioInfo() {
+        const isChecked = drawioCheckbox.checked;
+        const format = formatSelect.value;
+        
+        if (isChecked) {
+            drawioInfo.innerHTML = '<i class="bi bi-check-circle-fill text-success me-1"></i>' +
+                '<strong>Draw.io Native Mode:</strong> Generates editable XML with shapes, text, and icons from Draw.io libraries. ' +
+                'Open directly in Draw.io to edit everything.';
+            drawioInfo.className = 'alert alert-success mt-2 mb-0';
+        } else {
+            drawioInfo.innerHTML = '<i class="bi bi-info-circle me-1"></i>' +
+                '<strong>Standard Mode:</strong> Generates beautiful diagrams with authentic provider icons. ' +
+                'Export as PNG or SVG (shapes editable after ungrouping in Draw.io).';
+            drawioInfo.className = 'alert alert-info mt-2 mb-0';
+        }
+        drawioInfo.style.padding = '8px 12px';
+        drawioInfo.style.fontSize = '0.9em';
+    }
 
     formatSelect.addEventListener('change', function() {
         const format = this.value;
@@ -249,17 +270,8 @@ document.addEventListener('DOMContentLoaded', function() {
         styleSelect.innerHTML = '';
         
         if (format === 'graphviz') {
-            // Group cloud options
-            const groups = {
-                'Major Cloud': [],
-                'SaaS': [],
-                'Enterprise': [],
-                'Other': []
-            };
-            
-            config.styles.forEach(style => {
-                groups[style.group].push(style);
-            });
+            const groups = { 'Major Cloud': [], 'SaaS': [], 'Enterprise': [], 'Other': [] };
+            config.styles.forEach(style => groups[style.group].push(style));
             
             Object.keys(groups).forEach(groupName => {
                 if (groups[groupName].length > 0) {
@@ -275,7 +287,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         } else {
-            // Simple list for DOT
             config.styles.forEach(style => {
                 const option = document.createElement('option');
                 option.value = style.value;
@@ -284,11 +295,9 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        // Update help text
         formatHelp.textContent = config.formatHelp;
         styleHelp.textContent = config.styleHelp;
 
-        // Update examples
         if (format === 'graphviz') {
             cloudExamples.style.display = 'block';
             traditionalExamples.style.display = 'none';
@@ -297,6 +306,9 @@ document.addEventListener('DOMContentLoaded', function() {
             traditionalExamples.style.display = 'block';
         }
     });
+
+    drawioCheckbox.addEventListener('change', updateDrawioInfo);
+    updateDrawioInfo();
 });
 </script>
 
