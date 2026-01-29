@@ -42,41 +42,103 @@
                                     id="prompt" 
                                     name="prompt" 
                                     rows="4" 
-                                    placeholder="Describe your architecture... e.g., 'Azure AKS cluster with 3 node pools, Azure SQL Database, Application Gateway, and Azure Key Vault for secrets management'"
+                                    placeholder="Describe your diagram... e.g., 'Azure AKS cluster with load balancer' or 'User login process with validation steps'"
                                     required
                                     {{#unless canCreate}}disabled{{/unless}}
                                 ></textarea>
                                 <small class="text-muted">Be specific for better results</small>
                             </div>
 
-                            <div class="row mb-4">
-                                <div class="col-md-6">
-                                    <label for="diagramType" class="form-label fw-bold">Diagram Type</label>
-                                    <select class="form-select form-select-lg" id="diagramType" name="diagramType" {{#unless canCreate}}disabled{{/unless}}>
-                                        <option value="python">Python (PNG)</option>
-                                        <option value="drawio">Draw.io (XML)</option>
-                                    </select>
-                                </div>
+                            <!-- Format Selection (NEW!) -->
+                            <div class="mb-4">
+                                <label for="diagramFormat" class="form-label fw-bold">
+                                    <i class="bi bi-diagram-3 me-2"></i>Diagram Format
+                                </label>
+                                <select class="form-select form-select-lg" id="diagramFormat" name="diagramFormat" {{#unless canCreate}}disabled{{/unless}}>
+                                    <option value="graphviz">Cloud Architecture (Azure/AWS/GCP)</option>
+                                    <option value="graphviz-dot">Traditional Diagrams (Flowcharts/States/Org Charts)</option>
+                                </select>
+                                <small class="text-muted d-block mt-2" id="format-help">
+                                    Best for cloud infrastructure diagrams with proper icons
+                                </small>
+                            </div>
 
-                                <div class="col-md-6">
-                                    <label for="style" class="form-label fw-bold">Style</label>
-                                    <select class="form-select form-select-lg" id="style" name="style" {{#unless canCreate}}disabled{{/unless}}>
-                                        <option value="azure">Azure</option>
-                                        <option value="aws">AWS</option>
-                                        <option value="gcp">GCP</option>
-                                        <option value="k8s">Kubernetes</option>
-                                        <option value="generic">Generic</option>
-                                    </select>
-                                </div>
+                            <!-- Style Selection (dynamically updated based on format) -->
+                            <div class="mb-4">
+                                <label for="style" class="form-label fw-bold">
+                                    <i class="bi bi-palette me-2"></i>Style
+                                </label>
+                                <select class="form-select form-select-lg" id="style" name="style" {{#unless canCreate}}disabled{{/unless}}>
+                                    <!-- Cloud Architecture Styles (default) -->
+                                    <option value="azure">Azure</option>
+                                    <option value="aws">AWS</option>
+                                    <option value="gcp">GCP</option>
+                                    <option value="k8s">Kubernetes</option>
+                                    <option value="generic">Generic</option>
+                                </select>
+                                <small class="text-muted d-block mt-2" id="style-help">
+                                    Choose your cloud provider
+                                </small>
                             </div>
 
                             <div class="mb-4">
-                                <label for="quality" class="form-label fw-bold">Quality Level</label>
+                                <label for="quality" class="form-label fw-bold">
+                                    <i class="bi bi-sliders me-2"></i>Complexity Level
+                                </label>
                                 <select class="form-select form-select-lg" id="quality" name="quality" {{#unless canCreate}}disabled{{/unless}}>
-                                    <option value="simple">Simple (5-8 nodes)</option>
-                                    <option value="standard" selected>Standard (8-15 nodes)</option>
-                                    <option value="enterprise">Enterprise (15+ nodes)</option>
+                                    <option value="simple">Simple (5-8 components)</option>
+                                    <option value="standard" selected>Standard (8-15 components)</option>
+                                    <option value="enterprise">Enterprise (15+ components)</option>
                                 </select>
+                            </div>
+
+                            <!-- Examples Section -->
+                            <div class="mb-4">
+                                <div class="accordion" id="examplesAccordion">
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header">
+                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#examplesCollapse">
+                                                <i class="bi bi-lightbulb me-2"></i>Example Prompts
+                                            </button>
+                                        </h2>
+                                        <div id="examplesCollapse" class="accordion-collapse collapse" data-bs-parent="#examplesAccordion">
+                                            <div class="accordion-body">
+                                                <div id="cloud-examples">
+                                                    <h6 class="fw-bold">Cloud Architecture Examples:</h6>
+                                                    <ul class="small">
+                                                        <li><code>Azure AKS cluster with load balancer, KeyVault, and SQL Database</code></li>
+                                                        <li><code>AWS 3-tier web app with ELB, EC2, and RDS</code></li>
+                                                        <li><code>GCP microservices with Cloud Run and Cloud SQL</code></li>
+                                                        <li><code>Kubernetes deployment with ingress, service mesh, and persistent storage</code></li>
+                                                    </ul>
+                                                </div>
+                                                <div id="traditional-examples" style="display: none;">
+                                                    <h6 class="fw-bold">Flowchart Examples:</h6>
+                                                    <ul class="small">
+                                                        <li><code>User login process with email verification and 2FA</code></li>
+                                                        <li><code>Order processing workflow from cart to delivery</code></li>
+                                                        <li><code>CI/CD pipeline from commit to production deployment</code></li>
+                                                    </ul>
+                                                    <h6 class="fw-bold mt-3">State Machine Examples:</h6>
+                                                    <ul class="small">
+                                                        <li><code>Order status states: pending, processing, shipped, delivered, cancelled</code></li>
+                                                        <li><code>User session states with timeout and renewal</code></li>
+                                                    </ul>
+                                                    <h6 class="fw-bold mt-3">Org Chart Examples:</h6>
+                                                    <ul class="small">
+                                                        <li><code>Software development team structure with managers and engineers</code></li>
+                                                        <li><code>IT department hierarchy</code></li>
+                                                    </ul>
+                                                    <h6 class="fw-bold mt-3">Network Examples:</h6>
+                                                    <ul class="small">
+                                                        <li><code>Corporate network with firewall, switches, servers, and databases</code></li>
+                                                        <li><code>Home network topology with router, WiFi, and IoT devices</code></li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="d-grid">
@@ -103,5 +165,70 @@
         </div>
     </div>
 </section>
+
+<script>
+// Dynamic format/style switching
+document.addEventListener('DOMContentLoaded', function() {
+    const formatSelect = document.getElementById('diagramFormat');
+    const styleSelect = document.getElementById('style');
+    const formatHelp = document.getElementById('format-help');
+    const styleHelp = document.getElementById('style-help');
+    const cloudExamples = document.getElementById('cloud-examples');
+    const traditionalExamples = document.getElementById('traditional-examples');
+
+    // Style options for each format
+    const styleOptions = {
+        'graphviz': {
+            styles: [
+                { value: 'azure', label: 'Azure' },
+                { value: 'aws', label: 'AWS' },
+                { value: 'gcp', label: 'GCP' },
+                { value: 'k8s', label: 'Kubernetes' },
+                { value: 'generic', label: 'Generic' }
+            ],
+            formatHelp: 'Best for cloud infrastructure diagrams with proper icons',
+            styleHelp: 'Choose your cloud provider'
+        },
+        'graphviz-dot': {
+            styles: [
+                { value: 'flowchart', label: 'Flowchart / Process Diagram' },
+                { value: 'state', label: 'State Machine' },
+                { value: 'orgchart', label: 'Organization Chart' },
+                { value: 'network', label: 'Network Topology' },
+                { value: 'sequence', label: 'Sequence Diagram' }
+            ],
+            formatHelp: 'Best for process flows, state machines, org charts, and network diagrams',
+            styleHelp: 'Choose your diagram type'
+        }
+    };
+
+    formatSelect.addEventListener('change', function() {
+        const format = this.value;
+        const config = styleOptions[format];
+
+        // Update style dropdown
+        styleSelect.innerHTML = '';
+        config.styles.forEach(style => {
+            const option = document.createElement('option');
+            option.value = style.value;
+            option.textContent = style.label;
+            styleSelect.appendChild(option);
+        });
+
+        // Update help text
+        formatHelp.textContent = config.formatHelp;
+        styleHelp.textContent = config.styleHelp;
+
+        // Update examples
+        if (format === 'graphviz') {
+            cloudExamples.style.display = 'block';
+            traditionalExamples.style.display = 'none';
+        } else {
+            cloudExamples.style.display = 'none';
+            traditionalExamples.style.display = 'block';
+        }
+    });
+});
+</script>
 
 <script src="/js/diagram-generator.js"></script>
