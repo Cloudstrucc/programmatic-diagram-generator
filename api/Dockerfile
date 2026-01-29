@@ -28,6 +28,8 @@ RUN npm ci --only=production
 # Copy application code
 COPY . .
 
+RUN chmod +x scripts/generate_diagram.py 2>/dev/null || true
+
 # Create diagrams directory
 RUN mkdir -p diagrams
 

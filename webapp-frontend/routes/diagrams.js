@@ -5,6 +5,46 @@ const { v4: uuidv4 } = require('uuid');
 const { ensureAuthenticated } = require('../middleware/auth');
 const Diagram = require('../models/Diagram');
 const DiagramAPIClient = require('../services/diagramApiClient');
+const fetch = require('node-fetch'); 
+
+// Add this function somewhere in your routes file
+async function callPythonAPI(options) {
+    const apiUrl = process.env.API_URL || 'https://webapp.cloudstrucc.com';
+    
+    console.log('🐛 Calling Python API:', apiUrl);
+    console.log('🐛 With options:', options);
+    
+    const response = await fetch(`${apiUrl}/generate`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            prompt: options.prompt,
+            format: options.format,
+            style: options.style,
+            quality: options.quality,
+            drawioNative: options.drawioNative || false,
+            request_id: options.requestId
+        })
+    });
+    
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API returned ${response.status}: ${errorText}`);
+    }
+    
+    const result = await response.json();
+    
+    console.log('🐛 API Response:', {
+        success: result.success,
+        hasImageData: !!result.imageData,
+        hasDrawioXml: !!result.drawioXml,
+        drawioXmlLength: result.drawioXml?.length || 0
+    });
+    
+    return result;
+}
 
 // Generator Page
 router.get('/generator', ensureAuthenticated, async (req, res) => {
@@ -45,7 +85,7 @@ router.get('/generator', ensureAuthenticated, async (req, res) => {
     res.redirect('/dashboard');
   }
 });
-
+ 
 router.post('/generate', async (req, res) => {
     try {
         const { title, prompt, format, style, quality, drawioNative } = req.body;

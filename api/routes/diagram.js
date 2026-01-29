@@ -69,18 +69,20 @@ router.get('/templates/:type', async (req, res) => {
 
 /**
  * POST /api/diagram/generate
- * Generate a diagram (supports both Mermaid and draw.io)
+ * Generate a diagram (supports both draw.io templates and Python diagrams)
  */
 router.post('/generate', authenticate, rateLimit('free'), async (req, res) => {
   try {
     const { 
       prompt, 
-      diagramType = 'drawio',  // 'drawio' or 'python'
+      diagramType = 'python',   // 'drawio' or 'python'
       templateType = 'aws',     // For draw.io
       template = null,          // For python (optional)
       style = 'azure',          // For python
       quality = 'standard',     // For python
-      outputFormat = 'png'      // For python
+      outputFormat = 'png',     // For python
+      drawioNative = false,     // For python Draw.io XML export
+      format = 'graphviz'       // For python (graphviz or graphviz-dot)
     } = req.body;
 
     if (!prompt && !template) {
@@ -98,17 +100,28 @@ router.post('/generate', authenticate, rateLimit('free'), async (req, res) => {
       });
     }
 
-    // Enqueue the request
+    console.log('📥 Generate request:', {
+      diagramType,
+      format,
+      style,
+      quality,
+      drawioNative,
+      templateType
+    });
+
+    // Enqueue the request with all parameters
     const result = await req.app.locals.queueManager.enqueue({
       userId: req.apiKey,
       userTier: req.tier,
       prompt,
-      diagramType,
-      templateType,    // Used for draw.io
-      template,        // Used for python
-      style,           // Used for python
-      quality,         // Used for python
-      outputFormat     // Used for python
+      diagramType,      // 'drawio' or 'python'
+      templateType,     // Used for draw.io templates
+      template,         // Used for python (optional)
+      format,           // Used for python (graphviz or graphviz-dot)
+      style,            // Used for python OR draw.io
+      quality,          // Used for python
+      outputFormat,     // Used for python
+      drawioNative      // Used for python Draw.io XML export
     });
 
     res.json(result);
