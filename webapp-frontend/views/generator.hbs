@@ -22,6 +22,9 @@
                 <div class="card shadow" style="border: 2px solid #f0f0f0; border-radius: 15px;">
                     <div class="card-body p-5">
                         <form id="generator-form">
+                            <!-- Hidden field for database compatibility -->
+                            <input type="hidden" id="diagramType" name="diagramType" value="python">
+                            
                             <div class="mb-4">
                                 <label for="title" class="form-label fw-bold">Diagram Title</label>
                                 <input 
@@ -49,35 +52,50 @@
                                 <small class="text-muted">Be specific for better results</small>
                             </div>
 
-                            <!-- Format Selection (NEW!) -->
+                            <!-- Format Selection -->
                             <div class="mb-4">
                                 <label for="diagramFormat" class="form-label fw-bold">
                                     <i class="bi bi-diagram-3 me-2"></i>Diagram Format
                                 </label>
                                 <select class="form-select form-select-lg" id="diagramFormat" name="diagramFormat" {{#unless canCreate}}disabled{{/unless}}>
-                                    <option value="graphviz">Cloud Architecture (Azure/AWS/GCP)</option>
-                                    <option value="graphviz-dot">Traditional Diagrams (Flowcharts/States/Org Charts)</option>
+                                    <option value="graphviz">Cloud Architecture (Icons & Logos)</option>
+                                    <option value="graphviz-dot">Traditional Diagrams (Flowcharts/States)</option>
                                 </select>
                                 <small class="text-muted d-block mt-2" id="format-help">
                                     Best for cloud infrastructure diagrams with proper icons
                                 </small>
                             </div>
 
-                            <!-- Style Selection (dynamically updated based on format) -->
+                            <!-- Style Selection (dynamically updated) -->
                             <div class="mb-4">
                                 <label for="style" class="form-label fw-bold">
                                     <i class="bi bi-palette me-2"></i>Style
                                 </label>
                                 <select class="form-select form-select-lg" id="style" name="style" {{#unless canCreate}}disabled{{/unless}}>
                                     <!-- Cloud Architecture Styles (default) -->
-                                    <option value="azure">Azure</option>
-                                    <option value="aws">AWS</option>
-                                    <option value="gcp">GCP</option>
-                                    <option value="k8s">Kubernetes</option>
-                                    <option value="generic">Generic</option>
+                                    <optgroup label="Major Cloud Providers">
+                                        <option value="azure">Azure</option>
+                                        <option value="aws">AWS</option>
+                                        <option value="gcp">GCP</option>
+                                    </optgroup>
+                                    <optgroup label="Modern SaaS & Services">
+                                        <option value="saas">SaaS Services (Slack, Auth0, Datadog, Snowflake)</option>
+                                        <option value="elastic">Elastic Stack (ELK, Kibana)</option>
+                                        <option value="firebase">Firebase (Mobile/Web Apps)</option>
+                                    </optgroup>
+                                    <optgroup label="Enterprise Cloud">
+                                        <option value="ibm">IBM Cloud</option>
+                                        <option value="oracle">Oracle Cloud (OCI)</option>
+                                    </optgroup>
+                                    <optgroup label="Other Platforms">
+                                        <option value="k8s">Kubernetes</option>
+                                        <option value="digitalocean">Digital Ocean</option>
+                                        <option value="alibabacloud">Alibaba Cloud</option>
+                                        <option value="generic">Generic / On-Premise</option>
+                                    </optgroup>
                                 </select>
                                 <small class="text-muted d-block mt-2" id="style-help">
-                                    Choose your cloud provider
+                                    Choose your cloud provider or platform
                                 </small>
                             </div>
 
@@ -109,7 +127,21 @@
                                                         <li><code>Azure AKS cluster with load balancer, KeyVault, and SQL Database</code></li>
                                                         <li><code>AWS 3-tier web app with ELB, EC2, and RDS</code></li>
                                                         <li><code>GCP microservices with Cloud Run and Cloud SQL</code></li>
-                                                        <li><code>Kubernetes deployment with ingress, service mesh, and persistent storage</code></li>
+                                                        <li><code>Kubernetes deployment with ingress and persistent storage</code></li>
+                                                    </ul>
+                                                    <h6 class="fw-bold mt-3">SaaS & Modern Architectures:</h6>
+                                                    <ul class="small">
+                                                        <li><code>Microservices with Slack notifications, Auth0 login, and Datadog monitoring</code></li>
+                                                        <li><code>Data pipeline with Snowflake warehouse and Elasticsearch</code></li>
+                                                        <li><code>Firebase mobile app with Authentication and Firestore database</code></li>
+                                                        <li><code>Elastic Stack logging with Kibana dashboards and APM</code></li>
+                                                    </ul>
+                                                    <h6 class="fw-bold mt-3">Enterprise Cloud:</h6>
+                                                    <ul class="small">
+                                                        <li><code>IBM Cloud VPC with bare metal servers and DB2 database</code></li>
+                                                        <li><code>Oracle Cloud with Autonomous Database and Object Storage</code></li>
+                                                        <li><code>Digital Ocean Kubernetes cluster with managed database</code></li>
+                                                        <li><code>Alibaba Cloud ECS with SLB load balancer and RDS</code></li>
                                                     </ul>
                                                 </div>
                                                 <div id="traditional-examples" style="display: none;">
@@ -180,14 +212,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const styleOptions = {
         'graphviz': {
             styles: [
-                { value: 'azure', label: 'Azure' },
-                { value: 'aws', label: 'AWS' },
-                { value: 'gcp', label: 'GCP' },
-                { value: 'k8s', label: 'Kubernetes' },
-                { value: 'generic', label: 'Generic' }
+                { value: 'azure', label: 'Azure', group: 'Major Cloud' },
+                { value: 'aws', label: 'AWS', group: 'Major Cloud' },
+                { value: 'gcp', label: 'GCP', group: 'Major Cloud' },
+                { value: 'saas', label: 'SaaS Services (Slack, Auth0, Datadog)', group: 'SaaS' },
+                { value: 'elastic', label: 'Elastic Stack (ELK)', group: 'SaaS' },
+                { value: 'firebase', label: 'Firebase', group: 'SaaS' },
+                { value: 'ibm', label: 'IBM Cloud', group: 'Enterprise' },
+                { value: 'oracle', label: 'Oracle Cloud (OCI)', group: 'Enterprise' },
+                { value: 'k8s', label: 'Kubernetes', group: 'Other' },
+                { value: 'digitalocean', label: 'Digital Ocean', group: 'Other' },
+                { value: 'alibabacloud', label: 'Alibaba Cloud', group: 'Other' },
+                { value: 'generic', label: 'Generic / On-Premise', group: 'Other' }
             ],
-            formatHelp: 'Best for cloud infrastructure diagrams with proper icons',
-            styleHelp: 'Choose your cloud provider'
+            formatHelp: 'Best for cloud infrastructure with proper icons and logos',
+            styleHelp: 'Choose your cloud provider or platform'
         },
         'graphviz-dot': {
             styles: [
@@ -208,12 +247,42 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Update style dropdown
         styleSelect.innerHTML = '';
-        config.styles.forEach(style => {
-            const option = document.createElement('option');
-            option.value = style.value;
-            option.textContent = style.label;
-            styleSelect.appendChild(option);
-        });
+        
+        if (format === 'graphviz') {
+            // Group cloud options
+            const groups = {
+                'Major Cloud': [],
+                'SaaS': [],
+                'Enterprise': [],
+                'Other': []
+            };
+            
+            config.styles.forEach(style => {
+                groups[style.group].push(style);
+            });
+            
+            Object.keys(groups).forEach(groupName => {
+                if (groups[groupName].length > 0) {
+                    const optgroup = document.createElement('optgroup');
+                    optgroup.label = groupName;
+                    groups[groupName].forEach(style => {
+                        const option = document.createElement('option');
+                        option.value = style.value;
+                        option.textContent = style.label;
+                        optgroup.appendChild(option);
+                    });
+                    styleSelect.appendChild(optgroup);
+                }
+            });
+        } else {
+            // Simple list for DOT
+            config.styles.forEach(style => {
+                const option = document.createElement('option');
+                option.value = style.value;
+                option.textContent = style.label;
+                styleSelect.appendChild(option);
+            });
+        }
 
         // Update help text
         formatHelp.textContent = config.formatHelp;
