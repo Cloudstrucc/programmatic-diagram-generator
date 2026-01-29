@@ -1,6 +1,7 @@
-// routes/diagrams.js - Diagram Routes
+// routes/diagrams.js - Diagram Routes - FIXED FOR DRAW.IO
 const express = require('express');
 const router = express.Router();
+const { v4: uuidv4 } = require('uuid');
 const { ensureAuthenticated } = require('../middleware/auth');
 const Diagram = require('../models/Diagram');
 const DiagramAPIClient = require('../services/diagramApiClient');
@@ -30,7 +31,7 @@ router.get('/generator', ensureAuthenticated, async (req, res) => {
     // }
 
     res.render('generator', {
-      title: 'Generate Diagram - CloudStrucc',
+      title: 'Generate Diagram - Cloudstrucc',
       layout: 'main',
       canCreate,
       remaining: limits.diagramsPerDay - req.user.diagramsToday,
@@ -45,77 +46,88 @@ router.get('/generator', ensureAuthenticated, async (req, res) => {
   }
 });
 
-// Generate Diagram (API)
-router.post('/generate', ensureAuthenticated, async (req, res) => {
-  try {
-    const { title, prompt, diagramType, format, style, quality, template } = req.body;
-
-    // Validate
-    if (!title || !prompt) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Title and prompt are required' 
-      });
+router.post('/generate', async (req, res) => {
+    try {
+        const { title, prompt, format, style, quality, drawioNative } = req.body;
+        
+        console.log('🐛 Received request:', { title, format, style, quality, drawioNative });
+        
+        // Generate request ID
+        const requestId = uuidv4();
+        
+        // Create initial diagram record
+        const diagram = new Diagram({
+            user: req.user._id,
+            title,
+            prompt,
+            diagramFormat: format,
+            diagramType: 'python',
+            style,
+            quality,
+            status: 'generating',
+            requestId: requestId
+        });
+        
+        await diagram.save();
+        console.log('✅ Created diagram with ID:', diagram._id);
+        
+        // Start async generation (don't wait for it)
+        generateDiagramAsync(diagram._id, requestId, { prompt, format, style, quality, drawioNative });
+        
+        // Return immediately
+        res.json({ 
+            success: true, 
+            diagramId: diagram._id,
+            requestId: requestId 
+        });
+        
+    } catch (error) {
+        console.error('❌ Error:', error);
+        res.status(500).json({ success: false, message: error.message });
     }
-
-    // Check if user can create diagram
-    req.user.resetDailyCount();
-    if (!req.user.canCreateDiagram()) {
-      const limits = req.user.getTierLimits();
-      return res.status(429).json({ 
-        success: false, 
-        message: `Daily limit reached (${limits.diagramsPerDay} diagrams/day)` 
-      });
-    }
-
-    // Create diagram record
-    const diagram = new Diagram({
-      user: req.user._id,
-      title,
-      prompt,
-      diagramType: diagramType || 'python',
-      style: style || 'azure',
-      quality: quality || 'standard',
-      template: template || null,
-      status: 'generating'
-    });
-
-    await diagram.save();
-
-    // Call API to generate diagram
-    const apiResponse = await DiagramAPIClient.generateDiagram(req.user, {
-      prompt,
-      format: format || 'graphviz',  
-      diagramType: diagramType || 'python',
-      style: style || 'azure',
-      quality: quality || 'standard',
-      template: template || null
-    });
-
-    // Update diagram with request ID
-    diagram.requestId = apiResponse.requestId;
-    await diagram.save();
-
-    // Update user stats
-    req.user.diagramsToday += 1;
-    req.user.diagramsCreated += 1;
-    req.user.lastDiagramDate = new Date();
-    await req.user.save();
-
-    res.json({ 
-      success: true, 
-      diagramId: diagram._id,
-      requestId: apiResponse.requestId
-    });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ 
-      success: false, 
-      message: err.message || 'Error generating diagram' 
-    });
-  }
 });
+
+// Separate async function for generation
+async function generateDiagramAsync(diagramId, requestId, options) {
+    try {
+        console.log('🎨 Starting generation for:', diagramId);
+        
+        // Call Python API - THIS is where apiResponse is defined
+        const apiResponse = await callPythonAPI({
+            prompt: options.prompt,
+            format: options.format,
+            style: options.style,
+            quality: options.quality,
+            drawioNative: options.drawioNative,  // Pass this!
+            requestId: requestId
+        });
+        
+        console.log('🐛 API Response received');
+        console.log('   - Has imageData:', !!apiResponse.imageData);
+        console.log('   - Has drawioXml:', !!apiResponse.drawioXml);
+        console.log('   - drawioXml length:', apiResponse.drawioXml?.length || 0);
+        
+        // Update diagram with results
+        await Diagram.findByIdAndUpdate(diagramId, {
+            imageData: apiResponse.imageData,
+            drawioXml: apiResponse.drawioXml,  // ⚠️ CRITICAL LINE
+            svgData: apiResponse.svgData,
+            code: apiResponse.code,
+            status: 'completed'
+        });
+        
+        console.log('✅ Diagram updated successfully');
+        
+    } catch (error) {
+        console.error('❌ Generation failed:', error);
+        
+        // Update diagram with error
+        await Diagram.findByIdAndUpdate(diagramId, {
+            status: 'failed',
+            error: error.message
+        });
+    }
+}
 
 // Check Diagram Status (API)
 router.get('/status/:diagramId', ensureAuthenticated, async (req, res) => {
@@ -154,6 +166,7 @@ router.get('/status/:diagramId', ensureAuthenticated, async (req, res) => {
           title: diagram.title,
           imageData: diagram.imageData,
           xmlData: diagram.xmlData,
+          drawioXml: diagram.drawioXml,  // ✅ ADDED THIS!
           diagramType: diagram.diagramType
         }
       });
@@ -162,12 +175,31 @@ router.get('/status/:diagramId', ensureAuthenticated, async (req, res) => {
     // Check API status
     const apiStatus = await DiagramAPIClient.checkStatus(req.user, diagram.requestId);
 
+    console.log('📥 API Status Response:');
+    console.log('   status:', apiStatus.status);
+    console.log('   has result:', !!apiStatus.result);
+    console.log('   has drawioXml:', !!apiStatus.result?.drawioXml);
+
     if (apiStatus.status === 'completed') {
-      // Update diagram with results
+      // FIX 4: Save drawioXml from API response
       diagram.status = 'completed';
-      diagram.imageData = apiStatus.result;  // FIXED: Direct assignment
+      
+      // Handle both old format (result = string) and new format (result = object)
+      if (typeof apiStatus.result === 'string') {
+        diagram.imageData = apiStatus.result;
+      } else {
+        diagram.imageData = apiStatus.result.imageData || apiStatus.result;
+        diagram.drawioXml = apiStatus.result.drawioXml || null;  // ✅ ADDED THIS!
+        diagram.svgData = apiStatus.result.svgData || null;
+      }
+      
       diagram.tokensUsed = apiStatus.tokensUsed || 0;
       await diagram.save();
+
+      console.log('✅ Diagram updated with results');
+      console.log('   has imageData:', !!diagram.imageData);
+      console.log('   has drawioXml:', !!diagram.drawioXml);
+      console.log('   drawioXml length:', diagram.drawioXml ? diagram.drawioXml.length : 0);
 
       return res.json({
         success: true,
@@ -177,6 +209,7 @@ router.get('/status/:diagramId', ensureAuthenticated, async (req, res) => {
           title: diagram.title,
           imageData: diagram.imageData,
           xmlData: diagram.xmlData,
+          drawioXml: diagram.drawioXml,  // ✅ ADDED THIS!
           diagramType: diagram.diagramType
         }
       });
@@ -202,7 +235,7 @@ router.get('/status/:diagramId', ensureAuthenticated, async (req, res) => {
     });
 
   } catch (err) {
-    console.error(err);
+    console.error('❌ Error checking status:', err);
     res.status(500).json({ 
       success: false, 
       message: 'Error checking status' 
