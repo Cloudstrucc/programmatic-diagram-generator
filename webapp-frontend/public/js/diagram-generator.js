@@ -13,7 +13,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = {
             title: document.getElementById('title').value,
             prompt: document.getElementById('prompt').value,
-            diagramType: document.getElementById('diagramType').value,
+            diagramType: 'python',  // For database (always python)
+            format: document.getElementById('diagramFormat').value,  // For API (graphviz or graphviz-dot)
             style: document.getElementById('style').value,
             quality: document.getElementById('quality').value
         };

@@ -48,7 +48,7 @@ router.get('/generator', ensureAuthenticated, async (req, res) => {
 // Generate Diagram (API)
 router.post('/generate', ensureAuthenticated, async (req, res) => {
   try {
-    const { title, prompt, diagramType, style, quality, template } = req.body;
+    const { title, prompt, diagramType, format, style, quality, template } = req.body;
 
     // Validate
     if (!title || !prompt) {
@@ -85,6 +85,7 @@ router.post('/generate', ensureAuthenticated, async (req, res) => {
     // Call API to generate diagram
     const apiResponse = await DiagramAPIClient.generateDiagram(req.user, {
       prompt,
+      format: format || 'graphviz',  
       diagramType: diagramType || 'python',
       style: style || 'azure',
       quality: quality || 'standard',
