@@ -1,178 +1,79 @@
-// routes/diagram.js - Updated with draw.io template support
+// api/routes/diagram.js - Diagram Routes with Service Account Auth
 const express = require('express');
 const router = express.Router();
-const { authenticate, rateLimit } = require('../middleware/auth');
+const { authenticateServiceAccount, rateLimit } = require('../middleware/auth');
 
 /**
- * GET /api/diagram/templates
- * List available diagram templates
+ * Generate Diagram Endpoint
+ * Supports both service account (webapp) and JWT (external clients)
  */
-router.get('/templates', async (req, res) => {
+router.post('/generate', authenticateServiceAccount, async (req, res) => {
   try {
-    const drawioEngine = req.app.locals.drawioEngine;
-    const templates = drawioEngine.getAvailableTemplates();
-
-    res.json({
-      success: true,
-      templates: templates,
-      supported: {
-        cloud: ['aws', 'azure', 'gcp'],
-        containers: ['kubernetes'],
-        infrastructure: ['network', 'infrastructure'],
-        modeling: ['flowchart', 'uml']
-      }
+    console.log('📝 Diagram generation request:', {
+      userId: req.apiKey,
+      tier: req.tier,
+      isServiceAccount: req.isServiceAccount,
+      timestamp: new Date().toISOString()
     });
 
-  } catch (error) {
-    console.error('Get templates error:', error);
-    res.status(500).json({
-      error: 'INTERNAL_ERROR',
-      message: 'Failed to retrieve templates'
-    });
-  }
-});
-
-/**
- * GET /api/diagram/templates/:type
- * Get detailed information about a specific template
- */
-router.get('/templates/:type', async (req, res) => {
-  try {
-    const { type } = req.params;
-    const drawioEngine = req.app.locals.drawioEngine;
-
-    const details = drawioEngine.getTemplateDetails(type);
-
-    res.json({
-      success: true,
-      template: details.template,
-      style: details.style,
-      shapes: details.shapes,
-      stencils: details.stencils
-    });
-
-  } catch (error) {
-    if (error.message.includes('Unknown template')) {
-      return res.status(404).json({
-        error: 'TEMPLATE_NOT_FOUND',
-        message: error.message
-      });
-    }
-
-    console.error('Get template details error:', error);
-    res.status(500).json({
-      error: 'INTERNAL_ERROR',
-      message: 'Failed to retrieve template details'
-    });
-  }
-});
-
-/**
- * POST /api/diagram/generate
- * Generate a diagram (supports both draw.io templates and Python diagrams)
- */
-router.post('/generate', authenticate, rateLimit('free'), async (req, res) => {
-  try {
     const { 
       prompt, 
-      diagramType = 'python',   // 'drawio' or 'python'
-      templateType = 'aws',     // For draw.io
-      template = null,          // For python (optional)
-      style = 'azure',          // For python
-      quality = 'standard',     // For python
-      outputFormat = 'png',     // For python
-      drawioNative = false,     // For python Draw.io XML export
-      format = 'graphviz'       // For python (graphviz or graphviz-dot)
+      diagramType = 'python',
+      templateType = 'aws',
+      template = null,
+      style = 'azure',
+      quality = 'standard',
+      outputFormat = 'png',
+      drawioNative = false,
+      format = 'graphviz'
     } = req.body;
 
-    if (!prompt && !template) {
+    // Validation
+    if (!prompt) {
       return res.status(400).json({
-        error: 'INVALID_REQUEST',
-        message: 'Prompt or template is required'
+        error: 'VALIDATION_ERROR',
+        message: 'Prompt is required'
       });
     }
 
-    // Validate diagram type
-    if (!['drawio', 'python'].includes(diagramType)) {
-      return res.status(400).json({
-        error: 'INVALID_REQUEST',
-        message: 'diagramType must be "drawio" or "python"'
-      });
-    }
-
-    console.log('📥 Generate request:', {
+    // Enqueue the diagram generation request
+    const result = await req.app.locals.queueManager.enqueue({
+      userId: req.apiKey,           // 'webapp-service' for service accounts
+      userTier: req.tier,            // 'pro' for service accounts
+      prompt,
       diagramType,
+      templateType,
+      template,
       format,
       style,
       quality,
-      drawioNative,
-      templateType
+      outputFormat,
+      drawioNative
     });
 
-    // Enqueue the request with all parameters
-    const result = await req.app.locals.queueManager.enqueue({
-      userId: req.apiKey,
-      userTier: req.tier,
-      prompt,
-      diagramType,      // 'drawio' or 'python'
-      templateType,     // Used for draw.io templates
-      template,         // Used for python (optional)
-      format,           // Used for python (graphviz or graphviz-dot)
-      style,            // Used for python OR draw.io
-      quality,          // Used for python
-      outputFormat,     // Used for python
-      drawioNative      // Used for python Draw.io XML export
-    });
+    console.log('✅ Request enqueued:', result.requestId);
 
     res.json(result);
-  } catch (error) {
-    console.error('Generate diagram error:', error);
-    
-    if (error.code === 'RATE_LIMIT_EXCEEDED' || error.code === 'QUEUE_FULL') {
-      return res.status(429).json({
-        error: error.code,
-        message: error.message
-      });
-    }
 
+  } catch (error) {
+    console.error('❌ Generate endpoint error:', error);
     res.status(500).json({
-      error: 'INTERNAL_ERROR',
-      message: 'Failed to process request'
+      error: 'GENERATION_ERROR',
+      message: error.message
     });
   }
 });
 
 /**
- * Get available Python diagram styles
+ * Check Status Endpoint
+ * No authentication required (uses requestId as credential)
  */
-// router.get('/python/styles', authenticate, (req, res) => {
-//   const styles = req.app.locals.pythonGenerator.getAvailableStyles();
-//   res.json({
-//     success: true,
-//     styles
-//   });
-// });
-
-/**
- * Get available Python diagram templates
- */
-// router.get('/python/templates', authenticate, (req, res) => {
-//   const templates = req.app.locals.pythonGenerator.getAvailableTemplates();
-//   res.json({
-//     success: true,
-//     templates
-//   });
-// });
-
-/**
- * GET /api/diagram/status/:requestId
- * Check status of a diagram generation request
- */
-router.get('/status/:requestId', authenticate, async (req, res) => {
+router.get('/status/:requestId', async (req, res) => {
   try {
     const { requestId } = req.params;
     
-    // Get status from queueManager (which checks MongoDB)
+    console.log('🔍 Status check for:', requestId);
+    
     const status = await req.app.locals.queueManager.getRequestStatus(requestId);
     
     if (!status) {
@@ -182,174 +83,26 @@ router.get('/status/:requestId', authenticate, async (req, res) => {
       });
     }
 
-    // Return the status
-    res.json({
-      requestId,
-      status: status.status,
-      position: status.position || 0,
-      result: status.result,
-      error: status.error,
-      completedAt: status.completedAt
-    });
-
-  } catch (error) {
-    console.error('Status check error:', error);
-    res.status(500).json({
-      error: 'INTERNAL_ERROR',
-      message: 'Failed to retrieve status'
-    });
-  }
-});
-
-/**
- * DELETE /api/diagram/cancel/:requestId
- * Cancel a queued request
- */
-router.delete('/cancel/:requestId', authenticate, async (req, res) => {
-  try {
-    const { requestId } = req.params;
-    const userId = req.apiKey;
-
-    const cancelled = await req.app.locals.queueManager.cancelRequest(requestId, userId);
-
-    if (!cancelled) {
-      return res.status(404).json({
-        error: 'NOT_FOUND',
-        message: 'Request not found or already processed'
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'Request cancelled successfully'
-    });
-
-  } catch (error) {
-    console.error('Cancel request error:', error);
-    res.status(500).json({
-      error: 'INTERNAL_ERROR',
-      message: 'Failed to cancel request'
-    });
-  }
-});
-
-/**
- * GET /api/diagram/usage
- * Get usage statistics for current user
- */
-router.get('/usage', authenticate, async (req, res) => {
-  try {
-    const userId = req.apiKey;
-    const { timeWindow = 'day' } = req.query;
-
-    const usage = await req.app.locals.usageTracker.getUserUsage(userId, timeWindow);
-
-    res.json({
-      timeWindow,
-      usage: {
-        requests: usage.totalRequests,
-        tokens: usage.totalTokens,
-        estimatedCost: usage.totalCost
-      }
-    });
-
-  } catch (error) {
-    console.error('Usage check error:', error);
-    res.status(500).json({
-      error: 'INTERNAL_ERROR',
-      message: 'Failed to retrieve usage'
-    });
-  }
-});
-
-/**
- * GET /api/diagram/queue/status
- * Get current queue status (admin only)
- */
-router.get('/queue/status', authenticate, requireAdmin, async (req, res) => {
-  try {
-    const status = req.app.locals.queueManager.getQueueStatus();
     res.json(status);
+
   } catch (error) {
-    console.error('Queue status error:', error);
+    console.error('❌ Status endpoint error:', error);
     res.status(500).json({
-      error: 'INTERNAL_ERROR',
-      message: 'Failed to retrieve queue status'
+      error: 'STATUS_ERROR',
+      message: error.message
     });
   }
 });
 
 /**
- * GET /api/diagram/stats
- * Get usage statistics (admin only)
+ * Health Check Endpoint
  */
-router.get('/stats', authenticate, requireAdmin, async (req, res) => {
-  try {
-    const { startDate, endDate } = req.query;
-    
-    const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 86400000);
-    const end = endDate ? new Date(endDate) : new Date();
-
-    const stats = await req.app.locals.usageTracker.getUsageStats(start, end);
-
-    res.json({
-      startDate: start,
-      endDate: end,
-      stats
-    });
-
-  } catch (error) {
-    console.error('Stats error:', error);
-    res.status(500).json({
-      error: 'INTERNAL_ERROR',
-      message: 'Failed to retrieve statistics'
-    });
-  }
+router.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    service: 'diagram-api'
+  });
 });
-
-/**
- * POST /api/diagram/validate/drawio
- * Validate draw.io XML (useful for testing)
- */
-router.post('/validate/drawio', async (req, res) => {
-  try {
-    const { xml } = req.body;
-
-    if (!xml) {
-      return res.status(400).json({
-        error: 'INVALID_REQUEST',
-        message: 'XML content is required'
-      });
-    }
-
-    const drawioEngine = req.app.locals.drawioEngine;
-    const validation = drawioEngine.validateDrawioXML(xml);
-
-    res.json({
-      valid: validation.valid,
-      error: validation.error || null
-    });
-
-  } catch (error) {
-    console.error('Validation error:', error);
-    res.status(500).json({
-      error: 'INTERNAL_ERROR',
-      message: 'Failed to validate XML'
-    });
-  }
-});
-
-/**
- * Middleware to require admin access
- */
-function requireAdmin(req, res, next) {
-  if (!req.tier || req.tier !== 'enterprise') {
-    return res.status(403).json({
-      error: 'FORBIDDEN',
-      message: 'Admin access required'
-    });
-  }
-  next();
-}
 
 module.exports = router;

@@ -1,99 +1,89 @@
-// middleware/auth.js - Authentication and authorization middleware
+// api/middleware/auth.js - Authentication Middleware with Service Account Support
 const jwt = require('jsonwebtoken');
-const config = require('../config');
 
 /**
- * CORS middleware
+ * Standard JWT authentication for external clients
  */
-function cors(req, res, next) {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+const authenticate = (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
   
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
+  if (!token) {
+    return res.status(401).json({
+      error: 'UNAUTHORIZED',
+      message: 'No token provided'
+    });
   }
   
-  next();
-}
-
-/**
- * Verify JWT token and attach user to request
- */
-function authenticate(req, res, next) {
   try {
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
-        error: 'UNAUTHORIZED',
-        message: 'No token provided'
-      });
-    }
-    
-    const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, config.jwt.secret);
-    
-    req.user = decoded;
-    req.apiKey = decoded.apiKey;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.apiKey = decoded.userId;
     req.tier = decoded.tier || 'free';
-    
     next();
   } catch (error) {
-    return res.status(401).json({
-      error: 'INVALID_TOKEN',
+    console.error('JWT authentication failed:', error.message);
+    res.status(401).json({
+      error: 'UNAUTHORIZED',
       message: 'Invalid token'
     });
   }
-}
+};
 
 /**
- * Authenticate using API key
+ * Service account authentication for internal services (webapp)
+ * Falls back to JWT if service key not present
  */
-function authenticateApiKey(req, res, next) {
-  try {
-    const apiKey = req.headers['x-api-key'] || req.query.apiKey;
-    
-    if (!apiKey) {
+const authenticateServiceAccount = (req, res, next) => {
+  const serviceKey = req.headers['x-service-key'];
+  const expectedKey = process.env.SERVICE_ACCOUNT_KEY;
+  
+  console.log('🔐 Authentication attempt:', {
+    hasServiceKey: !!serviceKey,
+    hasExpectedKey: !!expectedKey,
+    keysMatch: serviceKey === expectedKey,
+    timestamp: new Date().toISOString()
+  });
+  
+  // Try service account authentication first
+  if (serviceKey && expectedKey) {
+    if (serviceKey === expectedKey) {
+      console.log('✅ Service account authenticated successfully');
+      req.apiKey = 'webapp-service';
+      req.tier = 'pro';  // Service account gets pro tier access
+      req.isServiceAccount = true;
+      return next();
+    } else {
+      console.warn('⚠️ Invalid service key provided');
       return res.status(401).json({
         error: 'UNAUTHORIZED',
-        message: 'No API key provided'
+        message: 'Invalid service key'
       });
     }
-    
-    req.apiKey = apiKey;
-    req.tier = 'free';
-    
-    next();
-  } catch (error) {
-    return res.status(401).json({
-      error: 'UNAUTHORIZED',
-      message: 'Invalid API key'
-    });
   }
-}
+  
+  // Fall back to JWT authentication for external clients
+  console.log('🔄 Falling back to JWT authentication');
+  return authenticate(req, res, next);
+};
 
 /**
- * Rate limiting - returns a factory function
+ * Rate limiting middleware (placeholder - implement with express-rate-limit)
  */
-function rateLimit(tier) {
-  return function(req, res, next) {
-    const limits = config.rateLimit;
-    const maxRequests = limits[tier || req.tier || 'free'] || limits.free;
+const rateLimit = (tier) => {
+  return (req, res, next) => {
+    // Skip rate limiting for service accounts
+    if (req.isServiceAccount) {
+      console.log('⏭️ Skipping rate limit for service account');
+      return next();
+    }
     
-    req.rateLimit = {
-      tier: tier || req.tier || 'free',
-      limit: maxRequests,
-      remaining: maxRequests
-    };
-    
+    // Implement rate limiting logic here
+    // For now, just pass through
     next();
   };
-}
+};
 
 module.exports = {
-  cors,
   authenticate,
-  authenticateApiKey,
+  authenticateServiceAccount,
   rateLimit
 };

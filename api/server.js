@@ -2,12 +2,13 @@
 const express = require('express');
 const { MongoClient } = require('mongodb');
 const WebSocket = require('ws');
+const cors = require('cors'); 
 const http = require('http');
 const config = require('./config');
 const UsageTracker = require('./services/usageTracker');
 const QueueManager = require('./services/queueManager');
 // const DrawioTemplateEngine = require('./services/drawioTemplates'); // Not needed for Python diagrams
-const { authenticate, authenticateApiKey, rateLimit, cors } = require('./middleware/auth');
+const { authenticate, rateLimit, authenticateServiceAccount } = require('./middleware/auth');
 const diagramRoutes = require('./routes/diagram');
 // const PythonDiagramGenerator = require('./services/pythonDiagramGenerator'); // Not needed - using Python script directly
 
@@ -227,12 +228,12 @@ class DiagramAPIServer {
    */
   setupRoutes() {
     // Public routes
-    this.app.use('/api/diagram', 
-      rateLimit(60000, 100), // 100 requests per minute
-      authenticate, // or authenticateApiKey
-      diagramRoutes
-    );
-
+    // this.app.use('/api/diagram', 
+    //   rateLimit(60000, 100), // 100 requests per minute
+    //   authenticate, // or authenticateApiKey
+    //   diagramRoutes
+    // );
+    this.app.use('/api/diagram', diagramRoutes);
     // 404 handler
     this.app.use((req, res) => {
       res.status(404).json({
@@ -331,9 +332,9 @@ class DiagramAPIServer {
       // Setup WebSocket
       this.setupWebSocket();
 
-      // Start listening
+      // Start listening on all interfaces (0.0.0.0) for Azure
       const port = config.server.port;
-      this.server.listen(port, () => {
+      this.server.listen(port, '0.0.0.0', () => {
         console.log(`\n✓ Server running on port ${port}`);
         console.log(`✓ WebSocket server ready`);
         console.log(`\nEndpoints:`);
@@ -344,8 +345,9 @@ class DiagramAPIServer {
         console.log(`  GET    /api/diagram/queue/status (admin)`);
         console.log(`  GET    /api/diagram/stats (admin)`);
         console.log(`  GET    /health`);
-        console.log(`\nWebSocket: ws://localhost:${port}`);
+        console.log(`\nWebSocket: ws://0.0.0.0:${port}`);
       });
+  
 
       // Graceful shutdown
       process.on('SIGTERM', () => this.shutdown());

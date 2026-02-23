@@ -7,44 +7,88 @@ const Diagram = require('../models/Diagram');
 const DiagramAPIClient = require('../services/diagramApiClient');
 const fetch = require('node-fetch'); 
 
-// Add this function somewhere in your routes file
+
+// webapp/routes/diagrams.js - Updated with Service Account Auth
+
 async function callPythonAPI(options) {
-    const apiUrl = process.env.API_URL || 'https://webapp.cloudstrucc.com';
+    const apiUrl = process.env.API_URL || 'https://api-cloudstrucc-unique.azurewebsites.net';
+    const serviceKey = process.env.SERVICE_ACCOUNT_KEY;
     
-    console.log('🐛 Calling Python API:', apiUrl);
-    console.log('🐛 With options:', options);
-    
-    const response = await fetch(`${apiUrl}/generate`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            prompt: options.prompt,
-            format: options.format,
-            style: options.style,
-            quality: options.quality,
-            drawioNative: options.drawioNative || false,
-            request_id: options.requestId
-        })
-    });
-    
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`API returned ${response.status}: ${errorText}`);
+    // Validation
+    if (!serviceKey) {
+        throw new Error('SERVICE_ACCOUNT_KEY not configured. Please set it in Azure Portal.');
     }
     
-    const result = await response.json();
-    
-    console.log('🐛 API Response:', {
-        success: result.success,
-        hasImageData: !!result.imageData,
-        hasDrawioXml: !!result.drawioXml,
-        drawioXmlLength: result.drawioXml?.length || 0
+    console.log('🔐 Preparing API call:', {
+        url: apiUrl,
+        hasServiceKey: !!serviceKey,
+        serviceKeyLength: serviceKey?.length,
+        serviceKeyPreview: serviceKey?.substring(0, 10) + '...',
+        timestamp: new Date().toISOString()
     });
     
-    return result;
+    const fullUrl = `${apiUrl}/api/diagram/generate`;
+    
+    const requestBody = {
+        prompt: options.prompt,
+        format: options.format,
+        diagramType: 'python',
+        style: options.style,
+        quality: options.quality,
+        drawioNative: options.drawioNative || false,
+        request_id: options.requestId
+    };
+    
+    console.log('📤 Request details:', {
+        url: fullUrl,
+        bodyKeys: Object.keys(requestBody),
+        prompt: requestBody.prompt?.substring(0, 50) + '...'
+    });
+    
+    try {
+        const response = await fetch(fullUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Service-Key': serviceKey  // ⚠️ SERVICE ACCOUNT AUTH
+            },
+            body: JSON.stringify(requestBody)
+        });
+        
+        console.log('📥 Response received:', {
+            status: response.status,
+            ok: response.ok,
+            statusText: response.statusText
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ API Error:', {
+                status: response.status,
+                error: errorText
+            });
+            throw new Error(`API returned ${response.status}: ${errorText}`);
+        }
+        
+        const result = await response.json();
+        
+        console.log('✅ API Response parsed:', {
+            success: result.success,
+            hasRequestId: !!result.requestId,
+            requestId: result.requestId
+        });
+        
+        return result;
+        
+    } catch (error) {
+        console.error('❌ API call failed:', {
+            message: error.message,
+            stack: error.stack
+        });
+        throw error;
+    }
 }
+
 
 // Generator Page
 router.get('/generator', ensureAuthenticated, async (req, res) => {
@@ -169,116 +213,66 @@ async function generateDiagramAsync(diagramId, requestId, options) {
     }
 }
 
-// Check Diagram Status (API)
+// Check Diagram Status (API) - FIXED VERSION
 router.get('/status/:diagramId', ensureAuthenticated, async (req, res) => {
   try {
     const identifier = req.params.diagramId;
     let diagram;
 
-    // Try to find by requestId first (e.g., req_1769...)
-    if (identifier.startsWith('req_')) {
+    console.log('🔍 Status check for identifier:', identifier);
+
+    // Check if it's a valid MongoDB ObjectId (24 hex chars)
+    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(identifier);
+    
+    if (isValidObjectId) {
+      console.log('   → Querying by MongoDB _id');
       diagram = await Diagram.findOne({
-        requestId: identifier,
+        _id: identifier,
         user: req.user._id
       });
     } else {
-      // Fall back to finding by MongoDB _id
+      console.log('   → Querying by requestId (UUID or req_ format)');
       diagram = await Diagram.findOne({
-        _id: identifier,
+        requestId: identifier,
         user: req.user._id
       });
     }
 
     if (!diagram) {
+      console.log('   ❌ Diagram not found');
       return res.status(404).json({ 
         success: false, 
         message: 'Diagram not found' 
       });
     }
 
-    // If already completed, return stored data
-    if (diagram.status === 'completed') {
-      return res.json({
-        success: true,
-        status: 'completed',
-        diagram: {
-          id: diagram._id,
-          title: diagram.title,
-          imageData: diagram.imageData,
-          xmlData: diagram.xmlData,
-          drawioXml: diagram.drawioXml,  // ✅ ADDED THIS!
-          diagramType: diagram.diagramType
-        }
-      });
-    }
+    console.log('   ✅ Diagram found:', diagram._id);
+    console.log('   status:', diagram.status);
+    console.log('   has imageData:', !!diagram.imageData);
+    console.log('   has drawioXml:', !!diagram.drawioXml);
 
-    // Check API status
-    const apiStatus = await DiagramAPIClient.checkStatus(req.user, diagram.requestId);
-
-    console.log('📥 API Status Response:');
-    console.log('   status:', apiStatus.status);
-    console.log('   has result:', !!apiStatus.result);
-    console.log('   has drawioXml:', !!apiStatus.result?.drawioXml);
-
-    if (apiStatus.status === 'completed') {
-      // FIX 4: Save drawioXml from API response
-      diagram.status = 'completed';
-      
-      // Handle both old format (result = string) and new format (result = object)
-      if (typeof apiStatus.result === 'string') {
-        diagram.imageData = apiStatus.result;
-      } else {
-        diagram.imageData = apiStatus.result.imageData || apiStatus.result;
-        diagram.drawioXml = apiStatus.result.drawioXml || null;  // ✅ ADDED THIS!
-        diagram.svgData = apiStatus.result.svgData || null;
-      }
-      
-      diagram.tokensUsed = apiStatus.tokensUsed || 0;
-      await diagram.save();
-
-      console.log('✅ Diagram updated with results');
-      console.log('   has imageData:', !!diagram.imageData);
-      console.log('   has drawioXml:', !!diagram.drawioXml);
-      console.log('   drawioXml length:', diagram.drawioXml ? diagram.drawioXml.length : 0);
-
-      return res.json({
-        success: true,
-        status: 'completed',
-        diagram: {
-          id: diagram._id,
-          title: diagram.title,
-          imageData: diagram.imageData,
-          xmlData: diagram.xmlData,
-          drawioXml: diagram.drawioXml,  // ✅ ADDED THIS!
-          diagramType: diagram.diagramType
-        }
-      });
-    }
-
-    if (apiStatus.status === 'failed') {
-      diagram.status = 'failed';
-      diagram.error = apiStatus.error || 'Generation failed';
-      await diagram.save();
-
-      return res.json({
-        success: false,
-        status: 'failed',
-        message: diagram.error
-      });
-    }
-
-    // Still processing
+    // Return current diagram status from database
     res.json({
       success: true,
-      status: 'generating',
-      position: apiStatus.position
+      status: diagram.status,
+      diagram: diagram.status === 'completed' ? {
+        id: diagram._id,
+        title: diagram.title,
+        imageData: diagram.imageData,
+        xmlData: diagram.xmlData,
+        drawioXml: diagram.drawioXml,
+        diagramType: diagram.diagramType
+      } : null,
+      error: diagram.error,
+      position: 0
     });
 
   } catch (err) {
     console.error('❌ Error checking status:', err);
+    console.error('   Stack:', err.stack);
     res.status(500).json({ 
       success: false, 
-      message: 'Error checking status' 
+      message: err.message || 'Error checking status'
     });
   }
 });

@@ -1,0 +1,11 @@
+      // Start listening
+      const port = config.server.port;
+      this.server.listen(port, '0.0.0.0', () => {
+        console.log(`\n✓ Server running on port ${port}`);
+        console.log(`✓ WebSocket server ready`);
+        console.log(`\nEndpoints:`);
+        console.log(`  POST   /api/diagram/generate`);
+        console.log(`  GET    /api/diagram/status/:requestId`);
+        console.log(`  DELETE /api/diagram/cancel/:requestId`);
+        console.log(`  GET    /api/diagram/usage`);
+        console.log(`  GET    /api/diagram/queue/status (admin)`);
