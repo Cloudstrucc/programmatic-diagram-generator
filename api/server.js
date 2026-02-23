@@ -48,10 +48,7 @@ class DiagramAPIServer {
    */
   async initDatabase() {
     try {
-      const client = await MongoClient.connect(config.database.connectionString, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-      });
+      const client = await MongoClient.connect(config.database.connectionString);
 
       this.db = client.db();
       console.log('✓ Database connected');

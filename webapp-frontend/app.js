@@ -96,25 +96,22 @@ app.engine('hbs', engine({
 app.set('view engine', 'hbs');
 app.set('views', path.join(__dirname, 'views'));
 
-// MongoDB Session Store with better logging
+// MongoDB Session Store (connect-mongo for Cosmos DB compatibility)
 console.log('📦 Creating MongoDB session store...');
 console.log('MongoDB URI:', process.env.MONGODB_URI ? 'Set ✓' : 'NOT SET ✗');
 
-const store = new MongoDBStore({
-  uri: process.env.MONGODB_URI,
-  collection: 'sessions',
-  connectionOptions: {
-    serverSelectionTimeoutMS: 10000
+const store = MongoStore.create({
+  mongoUrl: process.env.MONGODB_URI,
+  collectionName: 'sessions',
+  ttl: 7 * 24 * 60 * 60, // 7 days
+  autoRemove: 'native',
+  crypto: {
+    secret: process.env.SESSION_SECRET || 'cloudstrucc-diagram-generator-secret'
   }
 });
 
-// Handle session store events
 store.on('error', function(error) {
   console.error('❌ Session store error:', error);
-});
-
-store.on('connected', function() {
-  console.log('✓ Session store connected to MongoDB');
 });
 
 // Session Configuration with MongoDB Store
